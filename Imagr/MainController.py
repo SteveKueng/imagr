@@ -516,7 +516,7 @@ class MainController(NSObject):
             # count all of the workflow items - are we still using this?
             components = [item for item in self.selectedWorkflow['components']]
             component_count = len(components)
-            
+
             self.should_update_volume_list = False
 
             for item in self.selectedWorkflow['components']:
@@ -560,7 +560,7 @@ class MainController(NSObject):
                 self.targetVolume = list[0]
                 self.chooseTargetDropDown.selectItemWithTitle_(self.targetVolume)
             self.openEndWorkflowPanel()
-    
+
     def runComponent(self, item):
         '''Run the selected workflow component'''
         # No point carrying on if something is broken
@@ -602,7 +602,7 @@ class MainController(NSObject):
                     # If a partition task is done without a new target specified, no other tasks can be parsed.
                     # Another workflow must be selected.
                     NSLog("No target specified, reverting to workflow selection screen.")
-                    
+
             elif item.get('type') == 'included_workflow':
                 Utils.sendReport('in_progress', 'Running included workflow.')
                 self.runIncludedWorkflow(item)
@@ -622,7 +622,7 @@ class MainController(NSObject):
             else:
                 Utils.sendReport('error', 'Found an unknown workflow item.')
                 self.errorMessage = "Found an unknown workflow item."
-    
+
     def runIncludedWorkflow(self, item):
         '''Runs an included workdlow'''
         # find the workflow we're looking for
@@ -652,6 +652,18 @@ class MainController(NSObject):
         if auto_run:
             if component.get('use_serial', False):
                 self.computerName = hardware_info.get('serial_number', 'UNKNOWN')
+            elif component.get('use_script', False):
+                if component.get('url'):
+                    script = Utils.downloadFile(component.get('url'))
+                else:
+                    script = component.get('content', None)
+
+                if script:
+                    proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    (output, err) = proc.communicate()
+                    self.computerName = output
+                else:
+                    self.computerName = 'UNKNOWN'
             else:
                 self.computerName = existing_name
             self.theTabView.selectTabViewItem_(self.mainTab)
@@ -659,6 +671,18 @@ class MainController(NSObject):
         else:
             if component.get('use_serial', False):
                 self.computerNameInput.setStringValue_(hardware_info.get('serial_number', ''))
+            elif component.get('use_script', False):
+                if component.get('url'):
+                    script = Utils.downloadFile(component.get('url'))
+                else:
+                    script = component.get('content', None)
+
+                if script:
+                    proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    (output, err) = proc.communicate()
+                    self.computerNameInput.setStringValue_(output)
+                else:
+                    self.computerName = ''
             elif component.get('prefix', None):
                 self.computerNameInput.setStringValue_(component.get('prefix'))
             else:
@@ -975,7 +999,7 @@ class MainController(NSObject):
         # -1 = Shutdown
         # 0 = another workflow
         # 1 = Restart
-        
+
         if returncode == -1:
             NSLog("You clicked %@ - shutdown", returncode)
             self.restartAction = 'shutdown'
