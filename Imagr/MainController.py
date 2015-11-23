@@ -132,6 +132,9 @@ class MainController(NSObject):
         self.mainWindow.center()
         # Run app startup - get the images, password, volumes - anything that takes a while
 
+        # disable sleep and displaysleep
+        subprocess.call(["/usr/bin/pmset", "-a", "sleep", "0", "displaysleep", "0"])
+
         self.progressText.setStringValue_("Application Starting...")
         self.chooseWorkflowDropDown.removeAllItems()
         self.progressIndicator.setIndeterminate_(True)
