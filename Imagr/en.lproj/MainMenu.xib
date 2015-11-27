@@ -256,13 +256,13 @@ Gw
                                         <popUpButton verticalHuggingPriority="750" id="706" userLabel="Target">
                                             <rect key="frame" x="243" y="362" width="322" height="26"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                            <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="711">
+                                            <popUpButtonCell key="cell" type="push" title="Item 2" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="714" id="711">
                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="menu"/>
                                                 <menu key="menu" id="712">
                                                     <items>
                                                         <menuItem title="Select target volume" id="713"/>
-                                                        <menuItem title="Item 2" id="714"/>
+                                                        <menuItem title="Item 2" state="on" id="714"/>
                                                         <menuItem title="Item 3" id="715"/>
                                                     </items>
                                                 </menu>

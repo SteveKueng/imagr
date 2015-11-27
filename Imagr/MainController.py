@@ -102,6 +102,7 @@ class MainController(NSObject):
     first_boot_items = None
     no_intercation = False
     noInteractionWorkflow = None
+    noInteractionTarget = None
 
     def errorPanel(self, error):
         errorText = str(error)
@@ -273,7 +274,7 @@ class MainController(NSObject):
                     self.errorMessage = "Configuration plist couldn't be read."
                     self.noIntercationLabel.setStringValue_("Configuration plist couldn't be read.")
                 try:
-                    self.targetVolume = converted_plist['target']
+                    self.noInteractionTarget = converted_plist['target']
                 except:
                     self.errorMessage = "target wasn't set."
                     self.noIntercationLabel.setStringValue_("target wasn't set.")
@@ -290,6 +291,8 @@ class MainController(NSObject):
                 self.noIntercationLabel.setStringValue_("Computer info not found... try again in 10s...")
             time.sleep(10)
 
+
+        self.chooseImagingTarget_(self)
         self.runWorkflow_(self)
 
 
@@ -386,7 +389,15 @@ class MainController(NSObject):
             #     selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
             # else:
             #     selected_volume = list[0]
-            selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
+            if self.noInteractionTarget:
+                selected_volume = self.noInteractionTarget
+                if selected_volume == "firstDisk":
+
+                    selected_volume = self.volumes[0].mountpoint
+                    print "selVolume: %s", selected_volume
+            else:
+                selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
+
             for volume in self.volumes:
                 if str(volume.mountpoint) == str(selected_volume):
                     #imaging_target = volume
