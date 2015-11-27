@@ -23,6 +23,7 @@ import PyObjCTools
 import tempfile
 import shutil
 import Quartz
+import time
 
 class MainController(NSObject):
 
@@ -37,6 +38,7 @@ class MainController(NSObject):
     mainTab = objc.IBOutlet()
     errorTab = objc.IBOutlet()
     computerNameTab = objc.IBOutlet()
+    noIntercationTab = objc.IBOutlet()
 
     password = objc.IBOutlet()
     passwordLabel = objc.IBOutlet()
@@ -76,6 +78,9 @@ class MainController(NSObject):
     computerNameInput = objc.IBOutlet()
     computerNameButton = objc.IBOutlet()
 
+    noIntercationProcess = objc.IBOutlet()
+    noIntercationLabel = objc.IBOutlet()
+
     # former globals, now instance variables
     hasLoggedIn = None
     volumes = None
@@ -95,6 +100,8 @@ class MainController(NSObject):
     computerName = None
     counter = 0.0
     first_boot_items = None
+    no_intercation = False
+    noInteractionWorkflow = None
 
     def errorPanel(self, error):
         errorText = str(error)
@@ -213,6 +220,11 @@ class MainController(NSObject):
                     self.workflows = converted_plist['workflows']
                 except:
                     self.errorMessage = "No workflows found in the configuration plist."
+
+                try:
+                    self.no_intercation = converted_plist['no_intercation']
+                except:
+                    self.errorMessage = "interaction mode not set"
             else:
                 self.errorMessage = "Couldn't get configuration plist from server."
         else:
@@ -232,7 +244,11 @@ class MainController(NSObject):
             self.errorPanel(self.errorMessage)
         else:
             self.buildUtilitiesMenu()
-            if self.hasLoggedIn:
+            if self.no_intercation:
+                self.theTabView.selectTabViewItem_(self.noIntercationTab)
+                self.noIntercationProcess.startAnimation_(self)
+                self.checkComputerConfig()
+            elif self.hasLoggedIn:
                 self.enableWorkflowViewControls()
                 self.theTabView.selectTabViewItem_(self.mainTab)
                 self.chooseImagingTarget_(None)
@@ -240,6 +256,45 @@ class MainController(NSObject):
             else:
                 self.theTabView.selectTabViewItem_(self.loginTab)
                 self.mainWindow.makeFirstResponder_(self.password)
+
+    def checkComputerConfig(self):
+        self.noIntercationLabel.setStringValue_("Get computer info...")
+        hardware_info = Utils.get_hardware_info()
+        serial_number = hardware_info.get('serial_number', 'UNKNOWN')
+        computerURL = "http://imagr.media.int/computers/"+serial_number+".plist"
+
+
+        while True:
+            computerPlist = Utils.downloadFile(computerURL)
+            if computerPlist:
+                try:
+                    converted_plist = FoundationPlist.readPlistFromString(computerPlist)
+                except:
+                    self.errorMessage = "Configuration plist couldn't be read."
+                    self.noIntercationLabel.setStringValue_("Configuration plist couldn't be read.")
+                try:
+                    self.targetVolume = converted_plist['target']
+                except:
+                    self.errorMessage = "target wasn't set."
+                    self.noIntercationLabel.setStringValue_("target wasn't set.")
+                try:
+                    self.noInteractionWorkflow = converted_plist['workflow']
+                except:
+                    self.errorMessage = "workflow wasn't set."
+                    self.noIntercationLabel.setStringValue_("workflow wasn't set.")
+                if not self.errorMessage:
+                    self.noIntercationLabel.setStringValue_("Computer info found... starting workflow...")
+                    self.noIntercationProcess.stopAnimation_(self)
+                    break
+            else:
+                self.noIntercationLabel.setStringValue_("Computer info not found... try again in 10s...")
+            time.sleep(10)
+
+        self.runWorkflow_(self)
+
+
+
+
 
     @objc.IBAction
     def reloadWorkflows_(self, sender):
@@ -439,7 +494,10 @@ class MainController(NSObject):
     def runWorkflow_(self, sender):
         '''Set up the selected workflow to run on secondary thread'''
         self.workflow_is_running = True
-        selected_workflow = self.chooseWorkflowDropDown.titleOfSelectedItem()
+        if self.noInteractionWorkflow:
+            selected_workflow = self.noInteractionWorkflow
+        else:
+            selected_workflow = self.chooseWorkflowDropDown.titleOfSelectedItem()
         # let's get the workflow
         self.selectedWorkflow = None
         for workflow in self.workflows:

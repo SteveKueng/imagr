@@ -113,6 +113,9 @@
                 <outlet property="loginTab" destination="831" id="842"/>
                 <outlet property="mainTab" destination="830" id="843"/>
                 <outlet property="mainWindow" destination="450" id="697"/>
+                <outlet property="noIntercationLabel" destination="XKZ-Fw-Kzd" id="DQO-8R-baS"/>
+                <outlet property="noIntercationProcess" destination="Rk0-41-gs0" id="FMP-vV-4pF"/>
+                <outlet property="noIntercationTab" destination="U0V-x6-JbT" id="Gs1-Nt-bi9"/>
                 <outlet property="password" destination="478" id="671"/>
                 <outlet property="progressIndicator" destination="836" id="839"/>
                 <outlet property="progressText" destination="837" id="840"/>
@@ -143,7 +146,7 @@
                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="imagr_icon" id="484"/>
                     </imageView>
                     <tabView drawsBackground="NO" type="noTabsNoBorder" initialItem="834" id="829">
-                        <rect key="frame" x="7" y="8" width="680" height="487"/>
+                        <rect key="frame" x="8" y="8" width="680" height="487"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <font key="font" metaFont="system"/>
                         <tabViewItems>
@@ -390,6 +393,27 @@ Gw
                                                 </connections>
                                             </buttonCell>
                                         </button>
+                                    </subviews>
+                                </view>
+                            </tabViewItem>
+                            <tabViewItem label="nointeraction" identifier="1" id="U0V-x6-JbT" userLabel="no interaction">
+                                <view key="view" id="RPN-KA-d5H">
+                                    <rect key="frame" x="0.0" y="0.0" width="680" height="487"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <progressIndicator horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" displayedWhenStopped="NO" bezeled="NO" indeterminate="YES" style="spinning" id="Rk0-41-gs0">
+                                            <rect key="frame" x="324" y="227" width="32" height="32"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        </progressIndicator>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="XKZ-Fw-Kzd">
+                                            <rect key="frame" x="152" y="267" width="376" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" id="GSE-c7-aNq">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
                                     </subviews>
                                 </view>
                             </tabViewItem>

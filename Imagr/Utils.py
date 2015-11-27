@@ -323,7 +323,7 @@ def getReportURL():
 def sendReport(status, message):
     hardware_info = get_hardware_info()
     SERIAL = hardware_info.get('serial_number', 'UNKNOWN')
-    
+
     report_url = getReportURL()
     if report_url:
         # Should probably do some validation on the status at some point
@@ -392,10 +392,10 @@ def get_hardware_info():
 
 def setup_logging():
     syslog = getPlistData('syslog')
-    
+
     if not syslog:
         return
-    
+
     # Parse syslog URI
     try:
         uri = urlparse.urlparse(syslog)
@@ -424,7 +424,7 @@ def replacePlaceholders(script, target, computer_name=None):
     placeholders = {
         "{{target_volume}}": target,
         "{{serial_number}}": hardware_info.get('serial_number', 'UNKNOWN'),
-        "{{machine_model}}": hardware_info.get('machine_model', 'UNKNOWN')
+        "{{machine_model}}": hardware_info.get('machine_model', 'UNKNOWN'),
     }
 
     if computer_name:
