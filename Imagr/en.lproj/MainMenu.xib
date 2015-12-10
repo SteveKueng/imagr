@@ -290,20 +290,20 @@ Gw
                                             </connections>
                                         </popUpButton>
                                         <scrollView focusRingType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" id="761" userLabel="Workflow Description">
-                                            <rect key="frame" x="130" y="50" width="432" height="233"/>
+                                            <rect key="frame" x="130" y="50" width="432" height="162"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <clipView key="contentView" copiesOnScroll="NO" id="vbW-UT-dCx">
-                                                <rect key="frame" x="1" y="1" width="430" height="231"/>
+                                                <rect key="frame" x="1" y="1" width="430" height="160"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textView editable="NO" selectable="NO" drawsBackground="NO" importsGraphics="NO" verticallyResizable="NO" findStyle="panel" usesRuler="YES" usesFontPanel="YES" allowsNonContiguousLayout="YES" id="762">
-                                                        <rect key="frame" x="0.0" y="0.0" width="430" height="231"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="430" height="160"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <color key="backgroundColor" white="1" alpha="0.0" colorSpace="calibratedWhite"/>
-                                                        <size key="minSize" width="430" height="231"/>
+                                                        <size key="minSize" width="430" height="160"/>
                                                         <size key="maxSize" width="592" height="10000000"/>
                                                         <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                        <size key="minSize" width="430" height="231"/>
+                                                        <size key="minSize" width="430" height="160"/>
                                                         <size key="maxSize" width="592" height="10000000"/>
                                                     </textView>
                                                 </subviews>
@@ -314,7 +314,7 @@ Gw
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                             <scroller key="verticalScroller" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="764">
-                                                <rect key="frame" x="415" y="1" width="16" height="231"/>
+                                                <rect key="frame" x="415" y="1" width="16" height="160"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                         </scrollView>
@@ -414,6 +414,20 @@ Gw
                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
                                         </textField>
+                                        <button verticalHuggingPriority="750" id="Ce2-Ub-N1O">
+                                            <rect key="frame" x="273" y="13" width="134" height="32"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <buttonCell key="cell" type="push" title="Cancel &amp; Restart" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Eft-JG-Pbb">
+                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                                <string key="keyEquivalent" base64-UTF8="YES">
+Gw
+</string>
+                                            </buttonCell>
+                                            <connections>
+                                                <action selector="setStartupDisk:" target="664" id="HEH-et-z8Y"/>
+                                            </connections>
+                                        </button>
                                     </subviews>
                                 </view>
                             </tabViewItem>

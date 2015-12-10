@@ -731,6 +731,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
+                    script = Utils.replacePlaceholders(script)
                     proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     (output, err) = proc.communicate()
                     self.computerName = output
@@ -750,6 +751,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
+                    script = Utils.replacePlaceholders(script)
                     proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     (output, err) = proc.communicate()
                     self.computerNameInput.setStringValue_(output)

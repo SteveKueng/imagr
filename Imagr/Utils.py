@@ -72,6 +72,7 @@ def post_url(url, post_data, message=None, follow_redirects=False,
             # if we did `while not connection.isDone()` we'd miss printing
             # messages and displaying percentages if we exit the loop first
             connection_done = connection.isDone()
+
             if message and connection.status and connection.status != 304:
                 # log always, display if verbose is 1 or more
                 # also display in progress field
@@ -319,10 +320,21 @@ def getReportURL():
     else:
         return None
 
+def getNoInteractURL():
+    noInteractURL = getPlistData('nointeracturl')
+    if noInteractURL:
+        return noInteractURL
+    else:
+        return None
+
 
 def sendReport(status, message):
     hardware_info = get_hardware_info()
     SERIAL = hardware_info.get('serial_number', 'UNKNOWN')
+
+    #get token / user
+    token = getPlistData('token')
+    tokenuser = getPlistData('tokenuser')
 
     report_url = getReportURL()
     if report_url:
@@ -330,7 +342,9 @@ def sendReport(status, message):
         data = {
             'status': status,
             'serial': SERIAL,
-            'message': message
+            'message': message,
+            'user': tokenuser,
+            'token': token
         }
         NSLog('Report: %@', data )
         data = urllib.urlencode(data)
@@ -419,13 +433,15 @@ def setup_logging():
     logging.getLogger("Imagr").addHandler(handler)
     logging.getLogger("Imagr").setLevel("INFO")
 
-def replacePlaceholders(script, target, computer_name=None):
+def replacePlaceholders(script, target=None, computer_name=None):
     hardware_info = get_hardware_info()
     placeholders = {
-        "{{target_volume}}": target,
         "{{serial_number}}": hardware_info.get('serial_number', 'UNKNOWN'),
         "{{machine_model}}": hardware_info.get('machine_model', 'UNKNOWN'),
     }
+
+    if target:
+        placeholders['{{target_volume}}'] = target
 
     if computer_name:
         placeholders['{{computer_name}}'] = computer_name
