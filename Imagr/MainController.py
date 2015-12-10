@@ -24,6 +24,7 @@ import tempfile
 import shutil
 import Quartz
 import time
+import threading
 
 class MainController(NSObject):
 
@@ -200,7 +201,6 @@ class MainController(NSObject):
                 self.targetVolume = volume
 
     def loadData(self):
-
         pool = NSAutoreleasePool.alloc().init()
         self.volumes = macdisk.MountedVolumes()
 
@@ -248,7 +248,7 @@ class MainController(NSObject):
             if self.no_intercation:
                 self.theTabView.selectTabViewItem_(self.noIntercationTab)
                 self.noIntercationProcess.startAnimation_(self)
-                self.checkComputerConfig()
+                self.noInteraction()
             elif self.hasLoggedIn:
                 self.enableWorkflowViewControls()
                 self.theTabView.selectTabViewItem_(self.mainTab)
@@ -262,42 +262,54 @@ class MainController(NSObject):
         self.noIntercationLabel.setStringValue_("Get computer info...")
         hardware_info = Utils.get_hardware_info()
         serial_number = hardware_info.get('serial_number', 'UNKNOWN')
-        computerURL = "http://imagr.media.int/computers/"+serial_number+".plist"
+
+        Utils.sendReport('in_progress', 'Imagr no interaction mode starting...')
+
+        computerURL = Utils.getNoInteractURL()+"/"+serial_number
+
+        if computerURL:
+            while True:
+                computerPlist = Utils.downloadFile(computerURL)
+                self.errorMessage = ""
+                if computerPlist:
+                    try:
+                        converted_plist = FoundationPlist.readPlistFromString(computerPlist)
+                    except:
+                        self.errorMessage = "Configuration plist couldn't be read."
+                        self.noIntercationLabel.setStringValue_("Configuration plist couldn't be read.")
+                    try:
+                        self.noInteractionTarget = converted_plist['target']
+                    except:
+                        self.errorMessage = "target wasn't set."
+                        self.noIntercationLabel.setStringValue_("target wasn't set.")
+                    try:
+                        self.noInteractionWorkflow = converted_plist['workflow']
+                    except:
+                        self.errorMessage = "workflow wasn't set."
+                        self.noIntercationLabel.setStringValue_("workflow wasn't set.")
+                    if not self.errorMessage:
+                        Utils.sendReport('in_progress', 'Computer info found... starting workflow...')
+                        self.noIntercationLabel.setStringValue_("Computer info found... starting workflow...")
+                        self.noIntercationProcess.stopAnimation_(self)
+                        break
+                else:
+                    Utils.sendReport('in_progress', 'Computer info not found... try again in 10s...')
+                    self.noIntercationLabel.setStringValue_("Computer info not found... try again in 10s...")
+                time.sleep(10)
 
 
-        while True:
-            computerPlist = Utils.downloadFile(computerURL)
-            if computerPlist:
-                try:
-                    converted_plist = FoundationPlist.readPlistFromString(computerPlist)
-                except:
-                    self.errorMessage = "Configuration plist couldn't be read."
-                    self.noIntercationLabel.setStringValue_("Configuration plist couldn't be read.")
-                try:
-                    self.noInteractionTarget = converted_plist['target']
-                except:
-                    self.errorMessage = "target wasn't set."
-                    self.noIntercationLabel.setStringValue_("target wasn't set.")
-                try:
-                    self.noInteractionWorkflow = converted_plist['workflow']
-                except:
-                    self.errorMessage = "workflow wasn't set."
-                    self.noIntercationLabel.setStringValue_("workflow wasn't set.")
-                if not self.errorMessage:
-                    self.noIntercationLabel.setStringValue_("Computer info found... starting workflow...")
-                    self.noIntercationProcess.stopAnimation_(self)
-                    break
-            else:
-                self.noIntercationLabel.setStringValue_("Computer info not found... try again in 10s...")
-            time.sleep(10)
+            self.chooseImagingTarget_(self)
+            self.runWorkflow_(self)
+        else:
+            self.errorMessage = "noInteractionURL not set!"
+            Utils.sendReport('error', 'noInteractionURL not set!')
+            self.errorRecoverable = False
+            self.theTabView.selectTabViewItem_(self.errorTab)
+            self.errorPanel(self.errorMessage)
 
-
-        self.chooseImagingTarget_(self)
-        self.runWorkflow_(self)
-
-
-
-
+    def noInteraction(self):
+        t = threading.Timer(1.0, self.checkComputerConfig)
+        t.start()
 
     @objc.IBAction
     def reloadWorkflows_(self, sender):
