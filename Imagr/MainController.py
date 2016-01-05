@@ -87,8 +87,6 @@ class MainController(NSObject):
     installSerial = objc.IBOutlet()
     installWorkflow = objc.IBOutlet()
 
-    backdropWindow = objc.IBOutlet()
-
     # former globals, now instance variables
     hasLoggedIn = None
     volumes = None
@@ -1299,22 +1297,22 @@ class MainController(NSObject):
 
         # Base all sizes on the screen's dimensions.
         screenRect = NSScreen.mainScreen().frame()
-        backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_(rect, NSBorderlessWindowMask, NSBackingStoreBuffered)
+        backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(screenRect, NSBorderlessWindowMask, NSBackingStoreBuffered, NO)
 
-        self.backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
-        self.backdropWindow.setLevel_(NSStatusWindowLevel)
-        self.backdropWindow.setFrame_display_(screenRect, True)
+        backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
+        backdropWindow.setLevel_(NSStatusWindowLevel)
+        backdropWindow.setFrame_display_(screenRect, True)
         #translucentColor = NSColor.blackColor().colorWithAlphaComponent_(0.75)
         script_dir = os.path.dirname(os.path.realpath(__file__))
         image = NSImage.alloc().initWithContentsOfFile_(os.path.join(script_dir, 'tiger.jpg'))
         translucentColor = NSColor.colorWithPatternImage_(image)
         translucentColor.setFill()
-        self.backdropWindow.setBackgroundColor_(translucentColor)
-        self.backdropWindow.setOpaque_(False)
-        self.backdropWindow.setIgnoresMouseEvents_(False)
-        self.backdropWindow.setAlphaValue_(0.0)
-        self.backdropWindow.orderFrontRegardless()
+        backdropWindow.setBackgroundColor_(translucentColor)
+        backdropWindow.setOpaque_(False)
+        backdropWindow.setIgnoresMouseEvents_(False)
+        backdropWindow.setAlphaValue_(0.0)
+        backdropWindow.orderFrontRegardless()
         NSAnimationContext.beginGrouping()
         NSAnimationContext.currentContext().setDuration_(1.0)
-        self.backdropWindow.animator().setAlphaValue_(1.0)
+        backdropWindow.animator().setAlphaValue_(1.0)
         NSAnimationContext.endGrouping()
