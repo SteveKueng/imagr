@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9060" systemVersion="14F1021" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="14F1509" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
         <deployment version="1060" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9060"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9531"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
@@ -91,6 +91,7 @@
         <customObject id="420" customClass="NSFontManager"/>
         <customObject id="664" customClass="MainController">
             <connections>
+                <outlet property="backdropWindow" destination="7Q0-am-NpB" id="gVn-dd-sui"/>
                 <outlet property="cancelAndRestartButton" destination="474" id="724"/>
                 <outlet property="chooseTargetCancelButton" destination="708" id="718"/>
                 <outlet property="chooseTargetDropDown" destination="706" id="719"/>
@@ -107,6 +108,10 @@
                 <outlet property="imagingProgress" destination="793" id="800"/>
                 <outlet property="imagingProgressDetail" destination="801" id="803"/>
                 <outlet property="imagingProgressPanel" destination="791" id="798"/>
+                <outlet property="installHostname" destination="blu-u3-RiO" id="G10-Fy-twG"/>
+                <outlet property="installSerial" destination="lOa-rs-8nA" id="7dY-s7-DOL"/>
+                <outlet property="installWorkflow" destination="2p0-oZ-Zlo" id="mfa-GJ-nCK"/>
+                <outlet property="intallTab" destination="pYM-Hc-hOa" id="TDp-Av-ccm"/>
                 <outlet property="introTab" destination="834" id="864"/>
                 <outlet property="loginButton" destination="477" id="666"/>
                 <outlet property="loginLabel" destination="479" id="667"/>
@@ -132,7 +137,7 @@
                 <outlet property="workflowDescriptionView" destination="761" id="772"/>
             </connections>
         </customObject>
-        <window title="Imagr" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="450">
+        <window allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="450">
             <windowStyleMask key="styleMask" titled="YES"/>
             <rect key="contentRect" x="0.0" y="274" width="697" height="503"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1280" height="778"/>
@@ -141,7 +146,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" alphaValue="0.5" id="471">
-                        <rect key="frame" x="-77" y="-1" width="457" height="502"/>
+                        <rect key="frame" x="-77" y="255" width="224" height="246"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="imagr_icon" id="484"/>
                     </imageView>
@@ -431,6 +436,68 @@ Gw
                                     </subviews>
                                 </view>
                             </tabViewItem>
+                            <tabViewItem label="install" identifier="" id="pYM-Hc-hOa">
+                                <view key="view" id="L55-3P-iI8">
+                                    <rect key="frame" x="0.0" y="0.0" width="680" height="487"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="06y-s6-Ir9">
+                                            <rect key="frame" x="224" y="260" width="83" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Hostname:" id="5fh-v5-DPk">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="neH-Ul-x9R">
+                                            <rect key="frame" x="264" y="235" width="43" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Serial:" id="X6X-tw-gC5">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="aeb-kw-UT5">
+                                            <rect key="frame" x="242" y="210" width="65" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Workflow:" id="RoD-3h-1HM">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="blu-u3-RiO">
+                                            <rect key="frame" x="311" y="260" width="198" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="cH1-Tk-cfu">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="lOa-rs-8nA">
+                                            <rect key="frame" x="311" y="235" width="136" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="RkE-Xn-Neu">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="2p0-oZ-Zlo">
+                                            <rect key="frame" x="311" y="210" width="164" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="iyi-T6-aHE">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                    </subviews>
+                                </view>
+                            </tabViewItem>
                         </tabViewItems>
                     </tabView>
                 </subviews>
@@ -569,6 +636,15 @@ Gw
                 </subviews>
             </view>
             <point key="canvasLocation" x="-133" y="396"/>
+        </window>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hasShadow="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="7Q0-am-NpB" customClass="LLBorderlessWindow">
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="163" y="199" width="268" height="83"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <view key="contentView" id="a2q-07-PGo">
+                <rect key="frame" x="0.0" y="0.0" width="268" height="83"/>
+                <autoresizingMask key="autoresizingMask"/>
+            </view>
         </window>
     </objects>
     <resources>

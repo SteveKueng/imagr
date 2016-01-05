@@ -40,6 +40,7 @@ class MainController(NSObject):
     errorTab = objc.IBOutlet()
     computerNameTab = objc.IBOutlet()
     noIntercationTab = objc.IBOutlet()
+    intallTab = objc.IBOutlet()
 
     password = objc.IBOutlet()
     passwordLabel = objc.IBOutlet()
@@ -81,6 +82,12 @@ class MainController(NSObject):
 
     noIntercationProcess = objc.IBOutlet()
     noIntercationLabel = objc.IBOutlet()
+
+    installHostname = objc.IBOutlet()
+    installSerial = objc.IBOutlet()
+    installWorkflow = objc.IBOutlet()
+
+    backdropWindow = objc.IBOutlet()
 
     # former globals, now instance variables
     hasLoggedIn = None
@@ -548,6 +555,8 @@ class MainController(NSObject):
 
     def workflowOnThreadPrep(self):
         self.disableWorkflowViewControls()
+        self.setInstallVar()
+        self.theTabView.selectTabViewItem_(self.intallTab)
         Utils.sendReport('in_progress', 'Preparing to run workflow %s...' % self.selectedWorkflow['name'])
         self.imagingLabel.setStringValue_("Preparing to run workflow...")
         self.imagingProgressDetail.setStringValue_('')
@@ -751,7 +760,6 @@ class MainController(NSObject):
                     self.computerName = 'UNKNOWN'
             else:
                 self.computerName = existing_name
-            self.theTabView.selectTabViewItem_(self.mainTab)
             self.workflowOnThreadPrep()
         else:
             if component.get('use_serial', False):
@@ -781,8 +789,14 @@ class MainController(NSObject):
     @objc.IBAction
     def setComputerName_(self, sender):
         self.computerName = self.computerNameInput.stringValue()
-        self.theTabView.selectTabViewItem_(self.mainTab)
         self.workflowOnThreadPrep()
+
+    def setInstallVar(self):
+        hardware_info = Utils.get_hardware_info()
+        serial_number = hardware_info.get('serial_number', 'UNKNOWN')
+        self.installHostname.setStringValue_(self.computerName)
+        self.installSerial.setStringValue_(serial_number)
+        self.installWorkflow.setStringValue_(self.selectedWorkflow['name'])
 
     def Clone(self, source, target, erase=True, verify=True, show_activity=True):
         """A wrapper around 'asr' to clone one disk object onto another.
@@ -923,8 +937,6 @@ class MainController(NSObject):
         if error:
             self.errorMessage = "Error copying first boot package %s - %s" % (url, error)
             return False
-
-
 
     def downloadPackage(self, url, target, number, progress_method=None):
         error = None
@@ -1273,6 +1285,36 @@ class MainController(NSObject):
         self.mainWindow.setAnimations_(NSDictionary.dictionaryWithObject_forKey_(shakeAnim, "frameOrigin"))
         self.mainWindow.animator().setFrameOrigin_(frame.origin)
 
+
     @objc.IBAction
     def showHelp_(self, sender):
         NSWorkspace.sharedWorkspace().openURL_(NSURL.URLWithString_("https://github.com/grahamgilbert/imagr/wiki"))
+
+
+    def showBackdrop(self):
+        # Create a transparent, black backdrop window that covers the whole
+        # screen and fade it in slowly.
+
+        self.mainWindow.setLevel_(NSStatusWindowLevel)
+
+        # Base all sizes on the screen's dimensions.
+        screenRect = NSScreen.mainScreen().frame()
+        backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_(rect, NSBorderlessWindowMask, NSBackingStoreBuffered)
+
+        self.backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
+        self.backdropWindow.setLevel_(NSStatusWindowLevel)
+        self.backdropWindow.setFrame_display_(screenRect, True)
+        #translucentColor = NSColor.blackColor().colorWithAlphaComponent_(0.75)
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        image = NSImage.alloc().initWithContentsOfFile_(os.path.join(script_dir, 'tiger.jpg'))
+        translucentColor = NSColor.colorWithPatternImage_(image)
+        translucentColor.setFill()
+        self.backdropWindow.setBackgroundColor_(translucentColor)
+        self.backdropWindow.setOpaque_(False)
+        self.backdropWindow.setIgnoresMouseEvents_(False)
+        self.backdropWindow.setAlphaValue_(0.0)
+        self.backdropWindow.orderFrontRegardless()
+        NSAnimationContext.beginGrouping()
+        NSAnimationContext.currentContext().setDuration_(1.0)
+        self.backdropWindow.animator().setAlphaValue_(1.0)
+        NSAnimationContext.endGrouping()

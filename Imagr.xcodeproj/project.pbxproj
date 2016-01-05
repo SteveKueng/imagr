@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9EA3467B1C3BF05700E2C09A /* LLBorderlessWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EA3467A1C3BF05700E2C09A /* LLBorderlessWindow.m */; };
+		9EA3467D1C3C077200E2C09A /* tiger.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9EA3467C1C3C077200E2C09A /* tiger.jpg */; };
 		C06979C21AE83F3500914535 /* gurl.py in Resources */ = {isa = PBXBuildFile; fileRef = C06979C11AE83F3500914535 /* gurl.py */; };
 		FC98DA231AD6B2DC00F90405 /* com.grahamgilbert.first-boot-pkg.plist in Resources */ = {isa = PBXBuildFile; fileRef = FC98DA1F1AD6B2DC00F90405 /* com.grahamgilbert.first-boot-pkg.plist */; };
 		FC98DA241AD6B2DC00F90405 /* first-boot in Resources */ = {isa = PBXBuildFile; fileRef = FC98DA201AD6B2DC00F90405 /* first-boot */; };
@@ -58,6 +60,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9EA346791C3BF05700E2C09A /* LLBorderlessWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LLBorderlessWindow.h; sourceTree = "<group>"; };
+		9EA3467A1C3BF05700E2C09A /* LLBorderlessWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LLBorderlessWindow.m; sourceTree = "<group>"; };
+		9EA3467C1C3C077200E2C09A /* tiger.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tiger.jpg; sourceTree = "<group>"; };
 		C06979C11AE83F3500914535 /* gurl.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = gurl.py; sourceTree = "<group>"; };
 		FC98DA1F1AD6B2DC00F90405 /* com.grahamgilbert.first-boot-pkg.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "com.grahamgilbert.first-boot-pkg.plist"; sourceTree = "<group>"; };
 		FC98DA201AD6B2DC00F90405 /* first-boot */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = "first-boot"; sourceTree = "<group>"; };
@@ -177,6 +182,8 @@
 		FCEA80B41AD0101100DBA039 /* Imagr */ = {
 			isa = PBXGroup;
 			children = (
+				9EA346791C3BF05700E2C09A /* LLBorderlessWindow.h */,
+				9EA3467A1C3BF05700E2C09A /* LLBorderlessWindow.m */,
 				FCEA80BF1AD0101100DBA039 /* main.py */,
 				FCEA80C31AD0101100DBA039 /* MainMenu.xib */,
 				FCEA80C11AD0101100DBA039 /* AppDelegate.py */,
@@ -192,6 +199,7 @@
 		FCEA80B51AD0101100DBA039 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				9EA3467C1C3C077200E2C09A /* tiger.jpg */,
 				FCEDFD951AF289E900743302 /* imagr_icon.png */,
 				C06979C11AE83F3500914535 /* gurl.py */,
 				FC98DA1E1AD6B2DC00F90405 /* Resources */,
@@ -342,6 +350,7 @@
 				FC98DA241AD6B2DC00F90405 /* first-boot in Resources */,
 				FCEA80FD1AD018E500DBA039 /* getauth_test.py in Resources */,
 				FCEA80F21AD018E500DBA039 /* applescript.py in Resources */,
+				9EA3467D1C3C077200E2C09A /* tiger.jpg in Resources */,
 				FCEA80F11AD018E500DBA039 /* airport_test.py in Resources */,
 				FCEA80F01AD018E500DBA039 /* airport.py in Resources */,
 				FCEA80F81AD018E500DBA039 /* ds.py in Resources */,
@@ -378,6 +387,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9EA3467B1C3BF05700E2C09A /* LLBorderlessWindow.m in Sources */,
 				FCEA80B81AD0101100DBA039 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
