@@ -26,6 +26,11 @@ import Quartz
 import time
 import threading
 
+class WindowArray(NSMutableArray):
+    @property
+    def prop(self):
+        return self._prop
+
 class MainController(NSObject):
 
     mainWindow = objc.IBOutlet()
@@ -750,9 +755,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    script = Utils.replacePlaceholders(script)
-                    proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    (output, err) = proc.communicate()
+                    output = runScript(script, None, None, None, None,True)
                     self.computerName = output
                 else:
                     self.computerName = 'UNKNOWN'
@@ -1016,12 +1019,16 @@ class MainController(NSObject):
         if retcode != 0:
             self.errorMessage = "Script %s returned a non-0 exit code" % str(int(counter))
 
-    def runScript(self, script, target, progress_method=None):
+    def runScript(self, script, target=None, progress_method=None, parameters=None, output=False):
         """
         Replaces placeholders in a script and then runs it.
         """
         # replace the placeholders in the script
         script = Utils.replacePlaceholders(script, target)
+
+        if parameters:
+            for parameter in parameters:
+                script = script + " " + parameter
 
         if progress_method:
             progress_method("Running script...", 0, '')
@@ -1031,7 +1038,10 @@ class MainController(NSObject):
             if progress_method:
                 progress_method(None, None, output)
 
-        return proc.returncode
+        if output:
+            return output
+        else:
+            return proc.returncode
 
     def copyScript(self, script, target, number, progress_method=None):
         """
@@ -1182,7 +1192,7 @@ class MainController(NSObject):
 
         return proc.returncode
 
-    def partitionTargetDisk(self, partitions=None, partition_map="GPTFormat", progress_method=None):
+    def partitionTargetDisk(self, partitions=None, partition_map="GPTFormat", progress_method=None, script=None):
         """
         Formats a target disk according to specifications.
         'partitions' is a list of dictionaries of partition mappings for names, sizes, formats.
@@ -1192,44 +1202,50 @@ class MainController(NSObject):
         # self.targetVolume is the macdisk object that can be queried for its parent disk
         parent_disk = self.targetVolume.Info()['ParentWholeDisk']
         NSLog("Parent disk: %@", parent_disk)
-
-        numPartitions = 0
-        cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk]
-        partitionCmdList = list()
-        future_target_name = ''
-        self.future_target = False
-        if partitions:
-            # A partition map was provided, so use that to repartition the disk
-            for partition in partitions:
-                target = list()
-                # Default format type is "Journaled HFS+, case-insensitive"
-                target.append(partition.get('format_type', 'Journaled HFS+'))
-                # Default name is "Macintosh HD"
-                target.append(partition.get('name', 'Macintosh HD'))
-                # Default partition size is 100% of the disk size
-                target.append(partition.get('size', '100%'))
-                partitionCmdList.extend(target)
-                numPartitions += 1
-                if partition.get('target'):
-                    NSLog("New target action found.")
-                    # A new default target for future workflow actions was specified
-                    self.future_target = True
-                    future_target_name = partition.get('name', 'Macintosh HD')
-            cmd.append(str(numPartitions))
-            cmd.append(str(partition_map))
-            cmd.extend(partitionCmdList)
+        if script:
+            output = runScript(script, None, None, None, parent_disk, True)
+            future_target_name = output
         else:
-            # No partition list was provided, so we just partition the target disk
-            # with one volume, named 'Macintosh HD', using JHFS+, GPT Format
-            cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk,
-                    '1', 'GPTFormat', 'Journaled HFS+', 'Macintosh HD', '100%']
-        NSLog("%@", str(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (partOut, partErr) = proc.communicate()
-        if partErr:
-            NSLog("Error occurred: %@", partErr)
-            self.errorMessage = partErr
-        NSLog("%@", partOut)
+            numPartitions = 0
+            cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk]
+            partitionCmdList = list()
+            future_target_name = ''
+            self.future_target = False
+            if partitions:
+                # A partition map was provided, so use that to repartition the disk
+                for partition in partitions:
+                    target = list()
+                    # Default format type is "Journaled HFS+, case-insensitive"
+                    target.append(partition.get('format_type', 'Journaled HFS+'))
+                    # Default name is "Macintosh HD"
+                    target.append(partition.get('name', 'Macintosh HD'))
+                    # Default partition size is 100% of the disk size
+                    target.append(partition.get('size', '100%'))
+                    partitionCmdList.extend(target)
+                    numPartitions += 1
+                    if partition.get('target'):
+                        NSLog("New target action found.")
+                        # A new default target for future workflow actions was specified
+                        self.future_target = True
+                        future_target_name = partition.get('name', 'Macintosh HD')
+                cmd.append(str(numPartitions))
+                cmd.append(str(partition_map))
+                cmd.extend(partitionCmdList)
+            else:
+                # No partition list was provided, so we just partition the target disk
+                # with one volume, named 'Macintosh HD', using JHFS+, GPT Format
+                cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk,
+                        '1', 'GPTFormat', 'Journaled HFS+', 'Macintosh HD', '100%']
+            NSLog("%@", str(cmd))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (partOut, partErr) = proc.communicate()
+            if partErr:
+                NSLog("Error occurred: %@", partErr)
+                self.errorMessage = partErr
+            NSLog("%@", partOut)
+
+            if not future_target_name:
+                future_target_name = cmd[6]
         # At this point, we need to reload the possible targets, because '/Volumes/Macintosh HD' might not exist
         self.should_update_volume_list = True
         if self.future_target == True:
@@ -1239,7 +1255,7 @@ class MainController(NSObject):
             # the only way to safely set self.targetVolume is to assign a new macdisk.Disk() object
             # and then find the partition that matches our target
             for partition in partitionListFromDisk.Partitions():
-                if partition.Info()['MountPoint'] == cmd[6]:
+                if partition.Info()['MountPoint'] == future_target_name:
                     self.targetVolume = partition
                     break
             NSLog("New target volume mountpoint is %@", self.targetVolume.mountpoint)
@@ -1293,26 +1309,27 @@ class MainController(NSObject):
         # Create a transparent, black backdrop window that covers the whole
         # screen and fade it in slowly.
 
-        self.mainWindow.setLevel_(NSStatusWindowLevel)
-
-        # Base all sizes on the screen's dimensions.
-        screenRect = NSScreen.mainScreen().frame()
-        backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(screenRect, NSBorderlessWindowMask, NSBackingStoreBuffered, NO)
-
-        backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
-        backdropWindow.setLevel_(NSStatusWindowLevel)
-        backdropWindow.setFrame_display_(screenRect, True)
-        #translucentColor = NSColor.blackColor().colorWithAlphaComponent_(0.75)
-        script_dir = os.path.dirname(os.path.realpath(__file__))
-        image = NSImage.alloc().initWithContentsOfFile_(os.path.join(script_dir, 'tiger.jpg'))
-        translucentColor = NSColor.colorWithPatternImage_(image)
-        translucentColor.setFill()
-        backdropWindow.setBackgroundColor_(translucentColor)
-        backdropWindow.setOpaque_(False)
-        backdropWindow.setIgnoresMouseEvents_(False)
-        backdropWindow.setAlphaValue_(0.0)
-        backdropWindow.orderFrontRegardless()
-        NSAnimationContext.beginGrouping()
-        NSAnimationContext.currentContext().setDuration_(1.0)
-        backdropWindow.animator().setAlphaValue_(1.0)
-        NSAnimationContext.endGrouping()
+        self.mainWindow.setLevel_(NSMainMenuWindowLevel)
+        self.WindowArray = NSMutableArray.new()
+        for screen in NSScreen.screens():
+            screenRect = screen.frame()
+            backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(screenRect, NSBorderlessWindowMask, NSBackingStoreBuffered, NO)
+            backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
+            backdropWindow.setLevel_(NSMainMenuWindowLevel-1)
+            #backdropWindow.setFrame_display_(screenRect, True)
+            #translucentColor = NSColor.blackColor().colorWithAlphaComponent_(0.75)
+            script_dir = os.path.dirname(os.path.realpath(__file__))
+            image = NSImage.alloc().initWithContentsOfFile_(os.path.join(script_dir, 'tiger.png'))
+            translucentColor = NSColor.colorWithPatternImage_(image)
+            translucentColor.setFill()
+            backdropWindow.setBackgroundColor_(translucentColor)
+            backdropWindow.setOpaque_(False)
+            backdropWindow.setIgnoresMouseEvents_(True)
+            backdropWindow.setAlphaValue_(0.0)
+            backdropWindow.orderFrontRegardless()
+            NSAnimationContext.beginGrouping()
+            NSAnimationContext.currentContext().setDuration_(1.0)
+            backdropWindow.animator().setAlphaValue_(1.0)
+            NSAnimationContext.endGrouping()
+            self.WindowArray.addObject_(backdropWindow)
+            backdropWindow.makeKeyAndOrderFront_(NSApp)

@@ -546,7 +546,7 @@ def setup_logging():
     logging.getLogger("Imagr").addHandler(handler)
     logging.getLogger("Imagr").setLevel("INFO")
 
-def replacePlaceholders(script, target=None, computer_name=None):
+def replacePlaceholders(script, target=None, computer_name=None, workflow=None):
     hardware_info = get_hardware_info()
     placeholders = {
         "{{serial_number}}": hardware_info.get('serial_number', 'UNKNOWN'),
@@ -559,6 +559,9 @@ def replacePlaceholders(script, target=None, computer_name=None):
     if computer_name:
         placeholders['{{computer_name}}'] = computer_name
 
+    if workflow:
+        placeholders['{{workflow}}'] = workflow
+        
     for placeholder, value in placeholders.iteritems():
         script = script.replace(placeholder, value)
     script = xml.sax.saxutils.unescape(script)
