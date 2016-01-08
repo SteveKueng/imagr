@@ -36,7 +36,7 @@ class LLLogViewDataSource(NSObject):
     lastLineIsPartial = False
 
     def addLine_partial_(self, line, isPartial):
-        
+
         if self.lastLineIsPartial:
             joinedLine = self.logFileData.lastObject() + line
             self.logFileData.removeLastObject()
@@ -792,7 +792,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    output = runScript(script, None, None, None, None,True)
+                    output = self.runScript(script, None, None, None, True)
                     self.computerName = output
                 else:
                     self.computerName = 'UNKNOWN'
@@ -809,10 +809,8 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    script = Utils.replacePlaceholders(script)
-                    proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    (output, err) = proc.communicate()
-                    self.computerNameInput.setStringValue_(output)
+                    output = self.runScript(script, None, None, None, True)
+                    self.computerName = output
                 else:
                     self.computerName = ''
             elif component.get('prefix', None):
@@ -1091,11 +1089,10 @@ class MainController(NSObject):
         dest_file = os.path.join(dest_dir, "%03d" % number)
         if progress_method:
             progress_method("Copying script to %s" % dest_file, 0, '')
+
         # convert placeholders
-        if self.computerName:
-            script = Utils.replacePlaceholders(script, target, self.computerName)
-        else:
-            script = Utils.replacePlaceholders(script, target)
+        script = Utils.replacePlaceholders(script, target, self.computerName)
+
         # write file
         with open(dest_file, "w") as text_file:
             text_file.write(script)
