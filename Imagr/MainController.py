@@ -26,6 +26,37 @@ import Quartz
 import time
 import threading
 
+class LLLogViewDataSource(NSObject):
+
+    """Data source for an NSTableView that displays an array of text lines.\n"""
+    """Line breaks are assumed to be LF, and partial lines from incremental """
+    """reading is handled."""
+
+    logFileData = NSMutableArray.alloc().init()
+    lastLineIsPartial = False
+
+    def addLine_partial_(self, line, isPartial):
+        
+        if self.lastLineIsPartial:
+            joinedLine = self.logFileData.lastObject() + line
+            self.logFileData.removeLastObject()
+            self.logFileData.addObject_(joinedLine)
+        else:
+            self.logFileData.addObject_(line)
+        self.lastLineIsPartial = isPartial
+
+    def removeAllLines(self):
+        self.logFileData.removeAllObjects()
+
+    def lineCount(self):
+        return self.logFileData.count()
+
+    def numberOfRowsInTableView_(self, tableView):
+        return self.lineCount()
+
+    def tableView_objectValueForTableColumn_row_(self, tableView, column, row):
+        return self.logFileData.objectAtIndex_(row)
+
 class WindowArray(NSMutableArray):
     @property
     def prop(self):
@@ -34,10 +65,12 @@ class WindowArray(NSMutableArray):
 class MainController(NSObject):
 
     mainWindow = objc.IBOutlet()
+    logWindow = objc.IBOutlet()
 
     utilities_menu = objc.IBOutlet()
     help_menu = objc.IBOutlet()
 
+    logView = objc.IBOutlet()
     theTabView = objc.IBOutlet()
     introTab = objc.IBOutlet()
     loginTab = objc.IBOutlet()
@@ -92,6 +125,8 @@ class MainController(NSObject):
     installSerial = objc.IBOutlet()
     installWorkflow = objc.IBOutlet()
 
+    logFileData = LLLogViewDataSource.alloc().init()
+
     # former globals, now instance variables
     hasLoggedIn = None
     volumes = None
@@ -114,6 +149,8 @@ class MainController(NSObject):
     no_intercation = False
     noInteractionWorkflow = None
     noInteractionTarget = None
+    fileHandle = None
+    updateTimer = None
 
     def errorPanel(self, error):
         errorText = str(error)
@@ -1304,18 +1341,68 @@ class MainController(NSObject):
     def showHelp_(self, sender):
         NSWorkspace.sharedWorkspace().openURL_(NSURL.URLWithString_("https://github.com/grahamgilbert/imagr/wiki"))
 
+    @objc.IBAction
+    def showLog_(self, sender):
+        logfile = u"/var/log/system.log"
+        #self.logWindow.setLevel_(NSMainMenuWindowLevel+1)
+        self.logWindow.setTitle_(logfile)
+        self.logWindow.setCanBecomeVisibleWithoutLogin_(True)
+        self.logWindow.orderFrontRegardless()
+        self.watchLogFile_(logfile)
+        self.logWindow.makeKeyAndOrderFront_(self)
+
+    def watchLogFile_(self, logFile):
+        # Display and continuously update a log file in the main window.
+        self.stopWatching()
+        self.logFileData.removeAllLines()
+        self.logView.setDataSource_(self.logFileData)
+        self.logView.reloadData()
+        self.fileHandle = NSFileHandle.fileHandleForReadingAtPath_(logFile)
+        self.refreshLog()
+        # Kick off a timer that updates the log view periodically.
+        self.updateTimer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.25,
+            self,
+            u"refreshLog",
+            None,
+            YES
+        )
+
+    def stopWatching(self):
+        # Release the file handle and stop the update timer.
+        if self.fileHandle is not None:
+            self.fileHandle.closeFile()
+            self.fileHandle = None
+        if self.updateTimer is not None:
+            self.updateTimer.invalidate()
+            self.updateTimer = None
+
+    def refreshLog(self):
+        # Check for new available data, read it, and scroll to the bottom.
+        data = self.fileHandle.availableData()
+        if data.length():
+            utf8string = NSString.alloc().initWithData_encoding_(
+                data,
+                NSUTF8StringEncoding
+            )
+            for line in utf8string.splitlines(True):
+                if line.endswith(u"\n"):
+                    self.logFileData.addLine_partial_(line.rstrip(u"\n"), False)
+                else:
+                    self.logFileData.addLine_partial_(line, True)
+            self.logView.reloadData()
+            self.logView.scrollRowToVisible_(self.logFileData.lineCount() - 1)
 
     def showBackdrop(self):
         # Create a transparent, black backdrop window that covers the whole
         # screen and fade it in slowly.
-
-        self.mainWindow.setLevel_(NSMainMenuWindowLevel)
+        #self.mainWindow.setLevel_(NSMainMenuWindowLevel)
         self.WindowArray = NSMutableArray.new()
         for screen in NSScreen.screens():
             screenRect = screen.frame()
             backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(screenRect, NSBorderlessWindowMask, NSBackingStoreBuffered, NO)
             backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
-            backdropWindow.setLevel_(NSMainMenuWindowLevel-1)
+            backdropWindow.setLevel_(-1)
             #backdropWindow.setFrame_display_(screenRect, True)
             #translucentColor = NSColor.blackColor().colorWithAlphaComponent_(0.75)
             script_dir = os.path.dirname(os.path.realpath(__file__))

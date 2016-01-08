@@ -561,7 +561,7 @@ def replacePlaceholders(script, target=None, computer_name=None, workflow=None):
 
     if workflow:
         placeholders['{{workflow}}'] = workflow
-        
+
     for placeholder, value in placeholders.iteritems():
         script = script.replace(placeholder, value)
     script = xml.sax.saxutils.unescape(script)
