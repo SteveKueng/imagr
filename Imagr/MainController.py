@@ -451,7 +451,6 @@ class MainController(NSObject):
             if self.noInteractionTarget:
                 selected_volume = self.noInteractionTarget
                 if selected_volume == "firstDisk":
-
                     selected_volume = self.volumes[0].mountpoint
                     print "selVolume: %s", selected_volume
             else:
@@ -730,7 +729,13 @@ class MainController(NSObject):
             # Partition a disk
             elif item.get('type') == 'partition':
                 Utils.sendReport('in_progress', 'Running partiton task.')
-                self.partitionTargetDisk(item.get('partitions'), item.get('map'))
+                script = None
+                if item.get('use_script'):
+                    if item.get('content'):
+                        scirpt = item.get('content')
+                    else:
+                        script = Utils.downloadFile(item.get('url'))
+                self.partitionTargetDisk(item.get('partitions'), item.get('map'), None, script)
                 if self.future_target == False:
                     # If a partition task is done without a new target specified, no other tasks can be parsed.
                     # Another workflow must be selected.
@@ -786,7 +791,7 @@ class MainController(NSObject):
             if component.get('use_serial', False):
                 self.computerName = hardware_info.get('serial_number', 'UNKNOWN')
             elif component.get('use_script', False):
-                if component.get('url'):
+                if component.get('url', False):
                     script = Utils.downloadFile(component.get('url'))
                 else:
                     script = component.get('content', None)
@@ -810,9 +815,8 @@ class MainController(NSObject):
 
                 if script:
                     output = self.runScript(script, None, None, None, True)
-                    self.computerName = output
-                else:
-                    self.computerName = ''
+                    self.computerNameInput.setStringValue_(output)
+
             elif component.get('prefix', None):
                 self.computerNameInput.setStringValue_(component.get('prefix'))
             else:
@@ -830,6 +834,8 @@ class MainController(NSObject):
     def setInstallVar(self):
         hardware_info = Utils.get_hardware_info()
         serial_number = hardware_info.get('serial_number', 'UNKNOWN')
+        if not self.computerName:
+            self.computerName = "-"
         self.installHostname.setStringValue_(self.computerName)
         self.installSerial.setStringValue_(serial_number)
         self.installWorkflow.setStringValue_(self.selectedWorkflow['name'])
@@ -1054,28 +1060,43 @@ class MainController(NSObject):
         if retcode != 0:
             self.errorMessage = "Script %s returned a non-0 exit code" % str(int(counter))
 
-    def runScript(self, script, target=None, progress_method=None, parameters=None, output=False):
+    def runScript(self, script, target=None, progress_method=None, parameters=None, out=False):
         """
         Replaces placeholders in a script and then runs it.
         """
-        # replace the placeholders in the script
+         # replace the placeholders in the script
         script = Utils.replacePlaceholders(script, target)
 
+        # Copy script content to a temporary location and make executable
+        script_file = tempfile.NamedTemporaryFile(delete=False)
+        script_file.write(script)
+        script_file.close()
+        os.chmod(script_file.name, 0700)
+
         if parameters:
-            for parameter in parameters:
+            for parameter in parameters.split():
                 script = script + " " + parameter
 
         if progress_method:
             progress_method("Running script...", 0, '')
-        proc = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        while proc.poll() is None:
-            output = proc.stdout.readline().strip().decode('UTF-8')
-            if progress_method:
-                progress_method(None, None, output)
+        proc = subprocess.Popen(script_file.name, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
-        if output:
-            return output
+        if out:
+            (output, err) = proc.communicate()
+            if proc.returncode:
+                NSLog("Error occurred: %@", err)
+                self.errorMessage = "Script returned a non-0 exit code"
+                os.remove(script_file.name)
+            else:
+                NSLog("Script out: %@", output.strip())
+                os.remove(script_file.name)
+                return output.strip()
         else:
+            while proc.poll() is None:
+                output = proc.stdout.readline().strip().decode('UTF-8')
+                if progress_method:
+                    progress_method(None, None, output)
+            os.remove(script_file.name)
             return proc.returncode
 
     def copyScript(self, script, target, number, progress_method=None):
@@ -1236,14 +1257,15 @@ class MainController(NSObject):
         # self.targetVolume is the macdisk object that can be queried for its parent disk
         parent_disk = self.targetVolume.Info()['ParentWholeDisk']
         NSLog("Parent disk: %@", parent_disk)
+        future_target_name = ''
         if script:
-            output = runScript(script, None, None, None, parent_disk, True)
+            output = self.runScript(script, None, None, parent_disk, True)
             future_target_name = output
+            self.future_target = True
         else:
             numPartitions = 0
             cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk]
             partitionCmdList = list()
-            future_target_name = ''
             self.future_target = False
             if partitions:
                 # A partition map was provided, so use that to repartition the disk
