@@ -327,13 +327,13 @@ class MainController(NSObject):
                     try:
                         self.noInteractionTarget = converted_plist['target']
                     except:
-                        self.errorMessage = "target wasn't set."
-                        self.noIntercationLabel.setStringValue_("target wasn't set.")
+                        self.errorMessage = "target not set."
+                        self.noIntercationLabel.setStringValue_("target not set.")
                     try:
                         self.noInteractionWorkflow = converted_plist['workflow']
                     except:
-                        self.errorMessage = "workflow wasn't set."
-                        self.noIntercationLabel.setStringValue_("workflow wasn't set.")
+                        self.errorMessage = "workflow not set."
+                        self.noIntercationLabel.setStringValue_("workflow not set.")
                     if not self.errorMessage:
                         Utils.sendReport('in_progress', 'Computer info found... starting workflow...')
                         self.noIntercationLabel.setStringValue_("Computer info found... starting workflow...")
@@ -675,6 +675,8 @@ class MainController(NSObject):
             self.errorPanel(self.errorMessage)
         elif self.restartAction == 'restart' or self.restartAction == 'shutdown':
             self.restartToImagedVolume()
+        elif self.restartAction == 'other':
+            self.reloadWorkflows_(self)
         else:
             if self.should_update_volume_list == True:
                 NSLog("Refreshing volume list.")
@@ -1171,8 +1173,9 @@ class MainController(NSObject):
             self.restartToImagedVolume()
         elif returncode == 0:
             NSLog("You clicked %@ - another workflow", returncode)
-            self.enableWorkflowViewControls()
-            self.chooseImagingTarget_(contextinfo)
+            self.reloadWorkflows_(self)
+            #self.enableWorkflowViewControls()
+            #self.chooseImagingTarget_(contextinfo)
 
     def enableAllButtons_(self, sender):
         self.cancelAndRestartButton.setEnabled_(True)
@@ -1255,6 +1258,7 @@ class MainController(NSObject):
         """
         # self.targetVolume.mountpoint should be the actual volume we're targeting.
         # self.targetVolume is the macdisk object that can be queried for its parent disk
+        print "test"
         parent_disk = self.targetVolume.Info()['ParentWholeDisk']
         NSLog("Parent disk: %@", parent_disk)
         future_target_name = ''

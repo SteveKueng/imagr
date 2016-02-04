@@ -52,8 +52,20 @@ class CustomThread(threading.Thread):
         proc = subprocess.call(self.cmd)
         pass
 
+def header_dict_from_list(array):
+    """Given a list of strings in http header format, return a dict.
+    If array is None, return None"""
+    if array is None:
+        return array
+    header_dict = {}
+    for item in array:
+        (key, sep, value) = item.partition(':')
+        if sep and value:
+            header_dict[key.strip()] = value.strip()
+    return header_dict
+
 def post_url(url, post_data, message=None, follow_redirects=False,
-            progress_method=None):
+            progress_method=None, additional_headers=None):
     """Sends POST data to a URL and then returns the result.
     Accepts the URL to send the POST to, URL encoded data and
     optionally can follow redirects
@@ -63,6 +75,7 @@ def post_url(url, post_data, message=None, follow_redirects=False,
                'file': temp_file,
                'follow_redirects': follow_redirects,
                'post_data': post_data,
+               'additional_headers': header_dict_from_list(additional_headers),
                'logging_function': NSLog}
     NSLog('gurl options: %@', options)
 
@@ -75,7 +88,6 @@ def post_url(url, post_data, message=None, follow_redirects=False,
             # if we did `while not connection.isDone()` we'd miss printing
             # messages and displaying percentages if we exit the loop first
             connection_done = connection.isDone()
-
             if message and connection.status and connection.status != 304:
                 # log always, display if verbose is 1 or more
                 # also display in progress field
@@ -135,10 +147,6 @@ def post_url(url, post_data, message=None, follow_redirects=False,
     connection.headers['http_result_description'] = description
 
     try:
-        file_handle = open(temp_file)
-        data = file_handle.read()
-        print data
-        file_handle.close()
         os.unlink(temp_file)
         os.rmdir(os.path.dirname(temp_file))
     except (OSError, IOError):
@@ -155,7 +163,7 @@ def post_url(url, post_data, message=None, follow_redirects=False,
                         connection.headers.get('http_result_description', ''))
 
 def get_url(url, destinationpath, message=None, follow_redirects=False,
-            progress_method=None):
+            progress_method=None, additional_headers=None):
     """Gets an HTTP or HTTPS URL and stores it in
     destination path. Returns a dictionary of headers, which includes
     http_result_code and http_result_description.
@@ -174,6 +182,7 @@ def get_url(url, destinationpath, message=None, follow_redirects=False,
     options = {'url': url,
                'file': tempdownloadpath,
                'follow_redirects': follow_redirects,
+               'additional_headers': header_dict_from_list(additional_headers),
                'logging_function': NSLog}
     NSLog('gurl options: %@', options)
 
@@ -367,10 +376,10 @@ def getToken(message=None, follow_redirects=False,
         raise
     return data
 
-def downloadFile(url):
+def downloadFile(url, additional_headers=None):
     temp_file = os.path.join(tempfile.mkdtemp(), 'tempdata')
     try:
-        headers = get_url(url, temp_file)
+        headers = get_url(url, temp_file, additional_headers=additional_headers)
     except HTTPError, err:
         NSLog("HTTP Error: %@", err)
         return False
@@ -398,7 +407,7 @@ def getPasswordHash(password):
 def getPlistData(data):
     # Try the user's homedir
     try:
-        NSLog("Trying Home Location")
+        # NSLog("Trying Home Location")
         homedir = os.path.expanduser("~")
         plist = FoundationPlist.readPlist(os.path.join(homedir, "Library", "Preferences", "com.grahamgilbert.Imagr.plist"))
         return plist[data]
@@ -406,7 +415,7 @@ def getPlistData(data):
         pass
     # Try the main prefs
     try:
-        NSLog("Trying System Location")
+        # NSLog("Trying System Location")
         plist = FoundationPlist.readPlist(os.path.join("/Library", "Preferences", "com.grahamgilbert.Imagr.plist"))
         return plist[data]
     except:
@@ -414,7 +423,7 @@ def getPlistData(data):
 
     # Hopefully we're in a netboot set, try in /System/Installation/Packages
     try:
-        NSLog("Trying NetBoot Location")
+        # NSLog("Trying NetBoot Location")
         plist = FoundationPlist.readPlist(os.path.join("/System", "Installation", "Packages", "com.grahamgilbert.Imagr.plist"))
         return plist[data]
     except:
@@ -436,7 +445,6 @@ def getNoInteractURL():
         return noInteractURL
     else:
         return None
-
 
 def sendReport(status, message):
     hardware_info = get_hardware_info()
@@ -467,13 +475,14 @@ def sendReport(status, message):
         except:
             pass
 
-    log_message = "[{}] {}".format(SERIAL, message)
-    log = logging.getLogger("Imagr")
+    if len(message) > 0:
+        log_message = "[{}] {}".format(SERIAL, message)
+        log = logging.getLogger("Imagr")
 
-    if status == 'error':
-        log.error(log_message)
-    else:
-        log.info(log_message)
+        if status == 'error':
+            log.error(log_message)
+        else:
+            log.info(log_message)
 
 def launchApp(app_path):
     # Get the binary path so we can launch it using a threaded subprocess
@@ -616,10 +625,10 @@ def unmountdmg(mountpoint):
         return True
 
 
-def downloadChunks(url, file, progress_method=None):
+def downloadChunks(url, file, progress_method=None, additional_headers=None):
     message = "Downloading %s" % os.path.basename(url)
     try:
-        headers = get_url(url, file, message=message, progress_method=progress_method)
+        headers = get_url(url, file, message=message, progress_method=progress_method, additional_headers=additional_headers)
     except HTTPError, err:
         NSLog("HTTP Error: %@", err)
         return False, err

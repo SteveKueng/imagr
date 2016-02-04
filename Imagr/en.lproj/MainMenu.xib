@@ -192,7 +192,7 @@ DQ
                     </button>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="-178" y="596"/>
+            <point key="canvasLocation" x="-210" y="-282"/>
         </window>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hidesOnDeactivate="YES" oneShot="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="703" userLabel="Choose Target" customClass="NSPanel">
             <windowStyleMask key="styleMask" utility="YES"/>
@@ -239,13 +239,13 @@ Gw
                     </textField>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="442" y="412"/>
+            <point key="canvasLocation" x="495" y="-323"/>
         </window>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hidesOnDeactivate="YES" oneShot="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="791" userLabel="Imaging Progress" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" utility="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="139" y="81" width="466" height="98"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1280" height="778"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <view key="contentView" id="792">
                 <rect key="frame" x="0.0" y="0.0" width="466" height="98"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -274,7 +274,7 @@ Gw
                     </textField>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="-133" y="396"/>
+            <point key="canvasLocation" x="622" y="-918"/>
         </window>
         <window title="LoginLog" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="XZx-aN-IOc">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES"/>
@@ -328,7 +328,7 @@ Gw
                     </scrollView>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="1012.5" y="245"/>
+            <point key="canvasLocation" x="767.5" y="-497"/>
         </window>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="e1G-kf-hT1" customClass="StatusWindow">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
@@ -619,7 +619,7 @@ Gw
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         </progressIndicator>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="XKZ-Fw-Kzd">
-                                            <rect key="frame" x="162" y="258" width="376" height="24"/>
+                                            <rect key="frame" x="56" y="258" width="587" height="24"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" id="GSE-c7-aNq">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -636,7 +636,7 @@ Gw
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="06y-s6-Ir9">
-                                            <rect key="frame" x="169" y="304" width="102" height="22"/>
+                                            <rect key="frame" x="94" y="314" width="102" height="22"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Hostname:" id="5fh-v5-DPk">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -645,7 +645,7 @@ Gw
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="neH-Ul-x9R">
-                                            <rect key="frame" x="194" y="274" width="77" height="22"/>
+                                            <rect key="frame" x="119" y="284" width="77" height="22"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Serial:" id="X6X-tw-gC5">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -654,7 +654,7 @@ Gw
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="aeb-kw-UT5">
-                                            <rect key="frame" x="169" y="244" width="102" height="22"/>
+                                            <rect key="frame" x="94" y="254" width="102" height="22"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Workflow:" id="RoD-3h-1HM">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -663,7 +663,7 @@ Gw
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="blu-u3-RiO">
-                                            <rect key="frame" x="275" y="304" width="257" height="22"/>
+                                            <rect key="frame" x="200" y="314" width="257" height="22"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="cH1-Tk-cfu">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -672,7 +672,7 @@ Gw
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="2p0-oZ-Zlo">
-                                            <rect key="frame" x="275" y="244" width="257" height="22"/>
+                                            <rect key="frame" x="200" y="254" width="442" height="22"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="iyi-T6-aHE">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -681,7 +681,7 @@ Gw
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="lOa-rs-8nA">
-                                            <rect key="frame" x="275" y="274" width="201" height="22"/>
+                                            <rect key="frame" x="200" y="284" width="267" height="22"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="RkE-Xn-Neu">
                                                 <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
@@ -696,7 +696,7 @@ Gw
                     </tabView>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="130" y="-300"/>
+            <point key="canvasLocation" x="-112" y="-674"/>
         </window>
     </objects>
     <resources>
