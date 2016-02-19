@@ -799,7 +799,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    output = self.runScript(script, None, None, None, True)
+                    output = self.runScript(script, None, None, True)
                     self.computerName = output
                 else:
                     self.computerName = 'UNKNOWN'
@@ -816,7 +816,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    output = self.runScript(script, None, None, None, True)
+                    output = self.runScript(script, None, None, True)
                     self.computerNameInput.setStringValue_(output)
 
             elif component.get('prefix', None):
@@ -1062,7 +1062,7 @@ class MainController(NSObject):
         if retcode != 0:
             self.errorMessage = "Script %s returned a non-0 exit code" % str(int(counter))
 
-    def runScript(self, script, target=None, progress_method=None, parameters=None, out=False):
+    def runScript(self, script, target=None, progress_method=None, out=False):
         """
         Replaces placeholders in a script and then runs it.
         """
@@ -1075,10 +1075,6 @@ class MainController(NSObject):
         script_file.close()
         os.chmod(script_file.name, 0700)
 
-        if parameters:
-            for parameter in parameters.split():
-                script = script + " " + parameter
-
         if progress_method:
             progress_method("Running script...", 0, '')
         proc = subprocess.Popen(script_file.name, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -1090,7 +1086,8 @@ class MainController(NSObject):
                 self.errorMessage = "Script returned a non-0 exit code"
                 os.remove(script_file.name)
             else:
-                NSLog("Script out: %@", output.strip())
+                if progress_method:
+                    progress_method("Running script...", 100, "done!")
                 os.remove(script_file.name)
                 return output.strip()
         else:
@@ -1258,13 +1255,18 @@ class MainController(NSObject):
         """
         # self.targetVolume.mountpoint should be the actual volume we're targeting.
         # self.targetVolume is the macdisk object that can be queried for its parent disk
-        print "test"
-        parent_disk = self.targetVolume.Info()['ParentWholeDisk']
+        
+        
+        parent_disk = ""
+        #parent_disk = self.targetVolume.Info()['ParentWholeDisk']
         NSLog("Parent disk: %@", parent_disk)
+
         future_target_name = ''
         if script:
-            output = self.runScript(script, None, None, parent_disk, True)
-            future_target_name = output
+            output = self.runScript(script, None, progress_method, True)
+            future_target_name = output.split(";")[0]
+            if output.split(";")[1]:
+                parent_disk = output.split(";")[1]
             self.future_target = True
         else:
             numPartitions = 0
@@ -1311,6 +1313,7 @@ class MainController(NSObject):
         if self.future_target == True:
             # Now assign self.targetVolume to new mountpoint
             partitionListFromDisk = macdisk.Disk('/dev/' + str(parent_disk))
+            
             # this is in desperate need of refactoring and rewriting
             # the only way to safely set self.targetVolume is to assign a new macdisk.Disk() object
             # and then find the partition that matches our target
