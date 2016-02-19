@@ -555,8 +555,7 @@ def setup_logging():
     logging.getLogger("Imagr").addHandler(handler)
     logging.getLogger("Imagr").setLevel("INFO")
 
-def replacePlaceholders(script, target, computer_name=None, keyboard_layout_id=None, keyboard_layout_name=None, language=None, locale=None, timezone=None):
-def replacePlaceholders(script, target=None, computer_name=None, workflow=None):
+def replacePlaceholders(script, target, computer_name=None, workflow=None, keyboard_layout_id=None, keyboard_layout_name=None, language=None, locale=None, timezone=None):
     hardware_info = get_hardware_info()
     placeholders = {
         "{{serial_number}}": hardware_info.get('serial_number', 'UNKNOWN'),

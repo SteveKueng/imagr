@@ -1302,8 +1302,8 @@ class MainController(NSObject):
             progress_method("Copying script to %s" % dest_file, 0, '')
 
         # convert placeholders
-        if self.computerName or self.keyboard_layout_id or self.keyboard_layout_name or self.language or self.locale or self.timezone:
-            script = Utils.replacePlaceholders(script, target, self.computerName, self.keyboard_layout_id, self.keyboard_layout_name, self.language, self.locale, self.timezone)
+        if self.computerName or self.selectedWorkflow or self.keyboard_layout_id or self.keyboard_layout_name or self.language or self.locale or self.timezone:
+            script = Utils.replacePlaceholders(script, target, self.computerName, self.selectedWorkflow, self.keyboard_layout_id, self.keyboard_layout_name, self.language, self.locale, self.timezone)
         else:
             script = Utils.replacePlaceholders(script, target)
         # write file
