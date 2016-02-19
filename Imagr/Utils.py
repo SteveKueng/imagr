@@ -26,8 +26,11 @@ import xml.sax.saxutils
 import logging
 import urlparse
 import socket
+import json
 
 from gurl import Gurl
+
+token_temp = ""
 
 class GurlError(Exception):
     pass
@@ -270,6 +273,109 @@ def get_url(url, destinationpath, message=None, follow_redirects=False,
         raise HTTPError(connection.status,
                         connection.headers.get('http_result_description', ''))
 
+def getToken(message=None, follow_redirects=False,
+            progress_method=None):
+    """generates user and token"""
+    global token_temp
+    if not token_temp:
+        temp_file = os.path.join(tempfile.mkdtemp(), 'tempdata')
+        token_temp = temp_file
+
+        url = getPlistData('token_url')
+        username = getPlistData('tokenuser')
+        password = getPlistData('tokenpass')
+
+        post_data = {
+            'username': username,
+            'password': password
+        }
+        post_data = urllib.urlencode(post_data)
+
+        options = {'url': url,
+                   'file': temp_file,
+                   'follow_redirects': follow_redirects,
+                   'post_data': post_data,
+                   'logging_function': NSLog}
+        NSLog('gurl options: %@', options)
+
+        connection = Gurl.alloc().initWithOptions_(options)
+        stored_percent_complete = -1
+        stored_bytes_received = 0
+        connection.start()
+        try:
+            while True:
+                # if we did `while not connection.isDone()` we'd miss printing
+                # messages and displaying percentages if we exit the loop first
+                connection_done = connection.isDone()
+
+                if message and connection.status and connection.status != 304:
+                    # log always, display if verbose is 1 or more
+                    # also display in progress field
+                    NSLog(message)
+                    if progress_method:
+                        progress_method(None, None, message)
+                    # now clear message so we don't display it again
+                    message = None
+                if (str(connection.status).startswith('2')
+                        and connection.percentComplete != -1):
+                    if connection.percentComplete != stored_percent_complete:
+                        # display percent done if it has changed
+                        stored_percent_complete = connection.percentComplete
+                        NSLog('Percent done: %@', stored_percent_complete)
+                        if progress_method:
+                            progress_method(None, stored_percent_complete, None)
+                elif connection.bytesReceived != stored_bytes_received:
+                    # if we don't have percent done info, log bytes received
+                    stored_bytes_received = connection.bytesReceived
+                    NSLog('Bytes received: %@', stored_bytes_received)
+                    if progress_method:
+                        progress_method(None, None,
+                                        'Bytes received: %s'
+                                        % stored_bytes_received)
+                if connection_done:
+                    break
+
+        except (KeyboardInterrupt, SystemExit):
+            # safely kill the connection then re-raise
+            connection.cancel()
+            raise
+        except Exception, err: # too general, I know
+            # Let us out! ... Safely! Unexpectedly quit dialogs are annoying...
+            connection.cancel()
+            # Re-raise the error as a GurlError
+            raise GurlError(-1, str(err))
+
+        if connection.error != None:
+            # Gurl returned an error
+            NSLog('Download error %@: %@', connection.error.code(),
+                  connection.error.localizedDescription())
+            if connection.SSLerror:
+                NSLog('SSL error detail: %@', str(connection.SSLerror))
+            NSLog('Headers: %@', str(connection.headers))
+            raise GurlError(connection.error.code(),
+                            connection.error.localizedDescription())
+
+        if connection.response != None:
+            NSLog('Status: %@', connection.status)
+            NSLog('Headers: %@', connection.headers)
+        if connection.redirection != []:
+            NSLog('Redirection: %@', connection.redirection)
+
+        connection.headers['http_result_code'] = str(connection.status)
+        description = NSHTTPURLResponse.localizedStringForStatusCode_(
+            connection.status)
+        connection.headers['http_result_description'] = description
+    else:
+        temp_file = token_temp
+
+    try:
+        file_handle = open(temp_file)
+        data = file_handle.read()
+        file_handle.close()
+    except (OSError, IOError):
+        raise
+    return data
+
 def downloadFile(url, additional_headers=None):
     temp_file = os.path.join(tempfile.mkdtemp(), 'tempdata')
     try:
@@ -333,19 +439,34 @@ def getReportURL():
     else:
         return None
 
+def getNoInteractURL():
+    noInteractURL = getPlistData('nointeracturl')
+    if noInteractURL:
+        return noInteractURL
+    else:
+        return None
 
 def sendReport(status, message):
     hardware_info = get_hardware_info()
     SERIAL = hardware_info.get('serial_number', 'UNKNOWN')
+    data = {}
+
+    # use token
+    if getPlistData('use_token'):
+        token_data = getToken()
+        token_data = json.loads(token_data)
+        token = token_data["token"]
+        tokenuser = token_data["user"]
+        data["token"] = token
+        data["user"] = tokenuser
 
     report_url = getReportURL()
     if report_url and len(message) > 0:
         # Should probably do some validation on the status at some point
-        data = {
-            'status': status,
-            'serial': SERIAL,
-            'message': message
-        }
+        data["status"] = status
+        data["serial"] = SERIAL
+        data["message"] = message
+
         NSLog('Report: %@', data )
         data = urllib.urlencode(data)
         # silently fail here, sending reports is a nice to have, if server is down, meh.
@@ -435,12 +556,15 @@ def setup_logging():
     logging.getLogger("Imagr").setLevel("INFO")
 
 def replacePlaceholders(script, target, computer_name=None, keyboard_layout_id=None, keyboard_layout_name=None, language=None, locale=None, timezone=None):
+def replacePlaceholders(script, target=None, computer_name=None, workflow=None):
     hardware_info = get_hardware_info()
     placeholders = {
-        "{{target_volume}}": target,
         "{{serial_number}}": hardware_info.get('serial_number', 'UNKNOWN'),
         "{{machine_model}}": hardware_info.get('machine_model', 'UNKNOWN'),
     }
+
+    if target:
+        placeholders['{{target_volume}}'] = target
 
     if computer_name:
         placeholders['{{computer_name}}'] = computer_name
@@ -459,6 +583,9 @@ def replacePlaceholders(script, target, computer_name=None, keyboard_layout_id=N
 
     if timezone:
         placeholders['{{timezone}}'] = timezone
+
+    if workflow:
+        placeholders['{{workflow}}'] = workflow
 
     for placeholder, value in placeholders.iteritems():
         script = script.replace(placeholder, str(value))

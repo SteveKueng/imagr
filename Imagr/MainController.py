@@ -24,20 +24,61 @@ import tempfile
 import shutil
 import Quartz
 import time
+import threading
+
+class LLLogViewDataSource(NSObject):
+
+    """Data source for an NSTableView that displays an array of text lines.\n"""
+    """Line breaks are assumed to be LF, and partial lines from incremental """
+    """reading is handled."""
+
+    logFileData = NSMutableArray.alloc().init()
+    lastLineIsPartial = False
+
+    def addLine_partial_(self, line, isPartial):
+
+        if self.lastLineIsPartial:
+            joinedLine = self.logFileData.lastObject() + line
+            self.logFileData.removeLastObject()
+            self.logFileData.addObject_(joinedLine)
+        else:
+            self.logFileData.addObject_(line)
+        self.lastLineIsPartial = isPartial
+
+    def removeAllLines(self):
+        self.logFileData.removeAllObjects()
+
+    def lineCount(self):
+        return self.logFileData.count()
+
+    def numberOfRowsInTableView_(self, tableView):
+        return self.lineCount()
+
+    def tableView_objectValueForTableColumn_row_(self, tableView, column, row):
+        return self.logFileData.objectAtIndex_(row)
+
+class WindowArray(NSMutableArray):
+    @property
+    def prop(self):
+        return self._prop
 
 class MainController(NSObject):
 
     mainWindow = objc.IBOutlet()
+    logWindow = objc.IBOutlet()
 
     utilities_menu = objc.IBOutlet()
     help_menu = objc.IBOutlet()
 
+    logView = objc.IBOutlet()
     theTabView = objc.IBOutlet()
     introTab = objc.IBOutlet()
     loginTab = objc.IBOutlet()
     mainTab = objc.IBOutlet()
     errorTab = objc.IBOutlet()
     computerNameTab = objc.IBOutlet()
+    noIntercationTab = objc.IBOutlet()
+    intallTab = objc.IBOutlet()
 
     password = objc.IBOutlet()
     passwordLabel = objc.IBOutlet()
@@ -80,6 +121,15 @@ class MainController(NSObject):
     countdownWarningImage = objc.IBOutlet()
     countdownCancelButton = objc.IBOutlet()
 
+    noIntercationProcess = objc.IBOutlet()
+    noIntercationLabel = objc.IBOutlet()
+
+    installHostname = objc.IBOutlet()
+    installSerial = objc.IBOutlet()
+    installWorkflow = objc.IBOutlet()
+
+    logFileData = LLLogViewDataSource.alloc().init()
+
     # former globals, now instance variables
     hasLoggedIn = None
     volumes = None
@@ -101,6 +151,11 @@ class MainController(NSObject):
     first_boot_items = None
     autorunWorkflow = None
     cancelledAutorun = False
+    no_intercation = False
+    noInteractionWorkflow = None
+    noInteractionTarget = None
+    fileHandle = None
+    updateTimer = None
 
     # For localize script
     keyboard_layout_name = None
@@ -142,6 +197,9 @@ class MainController(NSObject):
     def runStartupTasks(self):
         self.mainWindow.center()
         # Run app startup - get the images, password, volumes - anything that takes a while
+
+        # disable sleep and displaysleep
+        subprocess.call(["/usr/bin/pmset", "-a", "sleep", "0", "displaysleep", "0"])
 
         self.progressText.setStringValue_("Application Starting...")
         self.chooseWorkflowDropDown.removeAllItems()
@@ -260,6 +318,11 @@ class MainController(NSObject):
                         self.autorunWorkflow = None
                 except:
                     pass
+
+                try:
+                    self.no_intercation = converted_plist['no_intercation']
+                except:
+                    self.errorMessage = "interaction mode not set"
             else:
                 self.errorMessage = "Couldn't get configuration plist from server."
         else:
@@ -277,7 +340,11 @@ class MainController(NSObject):
             self.errorPanel(self.errorMessage)
         else:
             self.buildUtilitiesMenu()
-            if self.hasLoggedIn:
+            if self.no_intercation:
+                self.theTabView.selectTabViewItem_(self.noIntercationTab)
+                self.noIntercationProcess.startAnimation_(self)
+                self.noInteraction()
+            elif self.hasLoggedIn:
                 self.enableWorkflowViewControls()
                 self.theTabView.selectTabViewItem_(self.mainTab)
                 self.chooseImagingTarget_(None)
@@ -290,6 +357,59 @@ class MainController(NSObject):
     def isAutorun(self):
         if self.autorunWorkflow:
             self.countdownOnThreadPrep()
+
+    def checkComputerConfig(self):
+        self.noIntercationLabel.setStringValue_("Get computer info...")
+        hardware_info = Utils.get_hardware_info()
+        serial_number = hardware_info.get('serial_number', 'UNKNOWN')
+
+        Utils.sendReport('in_progress', 'Imagr no interaction mode starting...')
+
+        computerURL = Utils.getNoInteractURL()+"/"+serial_number
+
+        if computerURL:
+            while True:
+                computerPlist = Utils.downloadFile(computerURL)
+                self.errorMessage = ""
+                if computerPlist:
+                    try:
+                        converted_plist = FoundationPlist.readPlistFromString(computerPlist)
+                    except:
+                        self.errorMessage = "Configuration plist couldn't be read."
+                        self.noIntercationLabel.setStringValue_("Configuration plist couldn't be read.")
+                    try:
+                        self.noInteractionTarget = converted_plist['target']
+                    except:
+                        self.errorMessage = "target not set."
+                        self.noIntercationLabel.setStringValue_("target not set.")
+                    try:
+                        self.noInteractionWorkflow = converted_plist['workflow']
+                    except:
+                        self.errorMessage = "workflow not set."
+                        self.noIntercationLabel.setStringValue_("workflow not set.")
+                    if not self.errorMessage:
+                        Utils.sendReport('in_progress', 'Computer info found... starting workflow...')
+                        self.noIntercationLabel.setStringValue_("Computer info found... starting workflow...")
+                        self.noIntercationProcess.stopAnimation_(self)
+                        break
+                else:
+                    Utils.sendReport('in_progress', 'Computer info not found... try again in 10s...')
+                    self.noIntercationLabel.setStringValue_("Computer info not found... try again in 10s...")
+                time.sleep(10)
+
+
+            self.chooseImagingTarget_(self)
+            self.runWorkflow_(self)
+        else:
+            self.errorMessage = "noInteractionURL not set!"
+            Utils.sendReport('error', 'noInteractionURL not set!')
+            self.errorRecoverable = False
+            self.theTabView.selectTabViewItem_(self.errorTab)
+            self.errorPanel(self.errorMessage)
+
+    def noInteraction(self):
+        t = threading.Timer(1.0, self.checkComputerConfig)
+        t.start()
 
     @objc.IBAction
     def reloadWorkflows_(self, sender):
@@ -380,8 +500,17 @@ class MainController(NSObject):
             self.chooseTargetDropDown.addItemsWithTitles_(volume_list)
             if self.targetVolume:
                 self.chooseTargetDropDown.selectItemWithTitle_(self.targetVolume.mountpoint)
+            #     selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
+            # else:
+            #     selected_volume = list[0]
+            if self.noInteractionTarget:
+                selected_volume = self.noInteractionTarget
+                if selected_volume == "firstDisk":
+                    selected_volume = self.volumes[0].mountpoint
+                    print "selVolume: %s", selected_volume
+            else:
+                selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
 
-            selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
             for volume in self.volumes:
                 if str(volume.mountpoint) == str(selected_volume):
                     #imaging_target = volume
@@ -499,6 +628,10 @@ class MainController(NSObject):
         if self.autorunWorkflow:
             selected_workflow = self.autorunWorkflow
 
+        if self.noInteractionWorkflow:
+            selected_workflow = self.noInteractionWorkflow
+        else:
+            selected_workflow = self.chooseWorkflowDropDown.titleOfSelectedItem()
         # let's get the workflow
         self.selectedWorkflow = None
         for workflow in self.workflows:
@@ -540,6 +673,8 @@ class MainController(NSObject):
 
     def workflowOnThreadPrep(self):
         self.disableWorkflowViewControls()
+        self.setInstallVar()
+        self.theTabView.selectTabViewItem_(self.intallTab)
         Utils.sendReport('in_progress', 'Preparing to run workflow %s...' % self.selectedWorkflow['name'])
         self.imagingLabel.setStringValue_("Preparing to run workflow...")
         self.imagingProgressDetail.setStringValue_('')
@@ -675,6 +810,8 @@ class MainController(NSObject):
             self.errorPanel(self.errorMessage)
         elif self.restartAction == 'restart' or self.restartAction == 'shutdown':
             self.restartToImagedVolume()
+        elif self.restartAction == 'other':
+            self.reloadWorkflows_(self)
         else:
             if self.should_update_volume_list == True:
                 NSLog("Refreshing volume list.")
@@ -735,7 +872,13 @@ class MainController(NSObject):
             # Partition a disk
             elif item.get('type') == 'partition':
                 Utils.sendReport('in_progress', 'Running partiton task.')
-                self.partitionTargetDisk(item.get('partitions'), item.get('map'))
+                script = None
+                if item.get('use_script'):
+                    if item.get('content'):
+                        scirpt = item.get('content')
+                    else:
+                        script = Utils.downloadFile(item.get('url'))
+                self.partitionTargetDisk(item.get('partitions'), item.get('map'), None, script)
                 if self.future_target == False:
                     # If a partition task is done without a new target specified, no other tasks can be parsed.
                     # Another workflow must be selected.
@@ -831,13 +974,33 @@ class MainController(NSObject):
         if auto_run:
             if component.get('use_serial', False):
                 self.computerName = hardware_info.get('serial_number', 'UNKNOWN')
+            elif component.get('use_script', False):
+                if component.get('url', False):
+                    script = Utils.downloadFile(component.get('url'))
+                else:
+                    script = component.get('content', None)
+
+                if script:
+                    output = self.runScript(script, None, None, True)
+                    self.computerName = output
+                else:
+                    self.computerName = 'UNKNOWN'
             else:
                 self.computerName = existing_name
-            self.theTabView.selectTabViewItem_(self.mainTab)
             self.workflowOnThreadPrep()
         else:
             if component.get('use_serial', False):
                 self.computerNameInput.setStringValue_(hardware_info.get('serial_number', ''))
+            elif component.get('use_script', False):
+                if component.get('url'):
+                    script = Utils.downloadFile(component.get('url'))
+                else:
+                    script = component.get('content', None)
+
+                if script:
+                    output = self.runScript(script, None, None, True)
+                    self.computerNameInput.setStringValue_(output)
+
             elif component.get('prefix', None):
                 self.computerNameInput.setStringValue_(component.get('prefix'))
             else:
@@ -850,8 +1013,16 @@ class MainController(NSObject):
     @objc.IBAction
     def setComputerName_(self, sender):
         self.computerName = self.computerNameInput.stringValue()
-        self.theTabView.selectTabViewItem_(self.mainTab)
         self.workflowOnThreadPrep()
+
+    def setInstallVar(self):
+        hardware_info = Utils.get_hardware_info()
+        serial_number = hardware_info.get('serial_number', 'UNKNOWN')
+        if not self.computerName:
+            self.computerName = "-"
+        self.installHostname.setStringValue_(self.computerName)
+        self.installSerial.setStringValue_(serial_number)
+        self.installWorkflow.setStringValue_(self.selectedWorkflow['name'])
 
     def Clone(self, source, target, erase=True, verify=True, show_activity=True):
         """A wrapper around 'asr' to clone one disk object onto another.
@@ -1000,9 +1171,7 @@ class MainController(NSObject):
             self.errorMessage = "Error copying first boot package %s - %s" % (url, error)
             return False
 
-
-
-    def downloadPackage(self, url, target, number, progress_method=None, additional_headers=None):
+    def downloadPackage(self, url, target, number, progress_method=None):
         error = None
         dest_dir = os.path.join(target, 'usr/local/first-boot/items')
         if not os.path.exists(dest_dir):
@@ -1084,11 +1253,11 @@ class MainController(NSObject):
         if retcode != 0:
             self.errorMessage = "Script %s returned a non-0 exit code" % str(int(counter))
 
-    def runScript(self, script, target, progress_method=None):
+    def runScript(self, script, target=None, progress_method=None, out=False):
         """
         Replaces placeholders in a script and then runs it.
         """
-        # replace the placeholders in the script
+         # replace the placeholders in the script
         script = Utils.replacePlaceholders(script, target)
 
         # Copy script content to a temporary location and make executable
@@ -1096,15 +1265,29 @@ class MainController(NSObject):
         script_file.write(script)
         script_file.close()
         os.chmod(script_file.name, 0700)
+
         if progress_method:
-            progress_method("Running script...", -1, '')
+            progress_method("Running script...", 0, '')
         proc = subprocess.Popen(script_file.name, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        while proc.poll() is None:
-            output = proc.stdout.readline().strip().decode('UTF-8')
-            if progress_method:
-                progress_method(None, None, output)
-        os.remove(script_file.name)
-        return proc.returncode
+
+        if out:
+            (output, err) = proc.communicate()
+            if proc.returncode:
+                NSLog("Error occurred: %@", err)
+                self.errorMessage = "Script returned a non-0 exit code"
+                os.remove(script_file.name)
+            else:
+                if progress_method:
+                    progress_method("Running script...", 100, "done!")
+                os.remove(script_file.name)
+                return output.strip()
+        else:
+            while proc.poll() is None:
+                output = proc.stdout.readline().strip().decode('UTF-8')
+                if progress_method:
+                    progress_method(None, None, output)
+            os.remove(script_file.name)
+            return proc.returncode
 
     def copyScript(self, script, target, number, progress_method=None):
         """
@@ -1117,6 +1300,7 @@ class MainController(NSObject):
         dest_file = os.path.join(dest_dir, "%03d" % number)
         if progress_method:
             progress_method("Copying script to %s" % dest_file, 0, '')
+
         # convert placeholders
         if self.computerName or self.keyboard_layout_id or self.keyboard_layout_name or self.language or self.locale or self.timezone:
             script = Utils.replacePlaceholders(script, target, self.computerName, self.keyboard_layout_id, self.keyboard_layout_name, self.language, self.locale, self.timezone)
@@ -1257,7 +1441,7 @@ class MainController(NSObject):
 
         return proc.returncode
 
-    def partitionTargetDisk(self, partitions=None, partition_map="GPTFormat", progress_method=None):
+    def partitionTargetDisk(self, partitions=None, partition_map="GPTFormat", progress_method=None, script=None):
         """
         Formats a target disk according to specifications.
         'partitions' is a list of dictionaries of partition mappings for names, sizes, formats.
@@ -1268,53 +1452,64 @@ class MainController(NSObject):
         parent_disk = self.targetVolume.Info()['ParentWholeDisk']
         NSLog("Parent disk: %@", parent_disk)
 
-        numPartitions = 0
-        cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk]
-        partitionCmdList = list()
         future_target_name = ''
-        self.future_target = False
-        if partitions:
-            # A partition map was provided, so use that to repartition the disk
-            for partition in partitions:
-                target = list()
-                # Default format type is "Journaled HFS+, case-insensitive"
-                target.append(partition.get('format_type', 'Journaled HFS+'))
-                # Default name is "Macintosh HD"
-                target.append(partition.get('name', 'Macintosh HD'))
-                # Default partition size is 100% of the disk size
-                target.append(partition.get('size', '100%'))
-                partitionCmdList.extend(target)
-                numPartitions += 1
-                if partition.get('target'):
-                    NSLog("New target action found.")
-                    # A new default target for future workflow actions was specified
-                    self.future_target = True
-                    future_target_name = partition.get('name', 'Macintosh HD')
-            cmd.append(str(numPartitions))
-            cmd.append(str(partition_map))
-            cmd.extend(partitionCmdList)
+        if script:
+            output = self.runScript(script, None, progress_method, True)
+            future_target_name = output.split(";")[0]
+            if output.split(";")[1]:
+                parent_disk = output.split(";")[1]
+            self.future_target = True
         else:
-            # No partition list was provided, so we just partition the target disk
-            # with one volume, named 'Macintosh HD', using JHFS+, GPT Format
-            cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk,
-                    '1', 'GPTFormat', 'Journaled HFS+', 'Macintosh HD', '100%']
-        NSLog("%@", str(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (partOut, partErr) = proc.communicate()
-        if partErr:
-            NSLog("Error occurred: %@", partErr)
-            self.errorMessage = partErr
-        NSLog("%@", partOut)
+            numPartitions = 0
+            cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk]
+            partitionCmdList = list()
+            self.future_target = False
+            if partitions:
+                # A partition map was provided, so use that to repartition the disk
+                for partition in partitions:
+                    target = list()
+                    # Default format type is "Journaled HFS+, case-insensitive"
+                    target.append(partition.get('format_type', 'Journaled HFS+'))
+                    # Default name is "Macintosh HD"
+                    target.append(partition.get('name', 'Macintosh HD'))
+                    # Default partition size is 100% of the disk size
+                    target.append(partition.get('size', '100%'))
+                    partitionCmdList.extend(target)
+                    numPartitions += 1
+                    if partition.get('target'):
+                        NSLog("New target action found.")
+                        # A new default target for future workflow actions was specified
+                        self.future_target = True
+                        future_target_name = partition.get('name', 'Macintosh HD')
+                cmd.append(str(numPartitions))
+                cmd.append(str(partition_map))
+                cmd.extend(partitionCmdList)
+            else:
+                # No partition list was provided, so we just partition the target disk
+                # with one volume, named 'Macintosh HD', using JHFS+, GPT Format
+                cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk,
+                        '1', 'GPTFormat', 'Journaled HFS+', 'Macintosh HD', '100%']
+            NSLog("%@", str(cmd))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (partOut, partErr) = proc.communicate()
+            if partErr:
+                NSLog("Error occurred: %@", partErr)
+                self.errorMessage = partErr
+            NSLog("%@", partOut)
+
+            if not future_target_name:
+                future_target_name = cmd[6]
         # At this point, we need to reload the possible targets, because '/Volumes/Macintosh HD' might not exist
         self.should_update_volume_list = True
         if self.future_target == True:
             # Now assign self.targetVolume to new mountpoint
             partitionListFromDisk = macdisk.Disk('/dev/' + str(parent_disk))
+            
             # this is in desperate need of refactoring and rewriting
             # the only way to safely set self.targetVolume is to assign a new macdisk.Disk() object
             # and then find the partition that matches our target
             for partition in partitionListFromDisk.Partitions():
-                if partition.Info()['MountPoint'] == cmd[6]:
+                if partition.Info()['MountPoint'] == future_target_name:
                     self.targetVolume = partition
                     break
             NSLog("New target volume mountpoint is %@", self.targetVolume.mountpoint)
@@ -1378,6 +1573,87 @@ class MainController(NSObject):
         self.mainWindow.setAnimations_(NSDictionary.dictionaryWithObject_forKey_(shakeAnim, "frameOrigin"))
         self.mainWindow.animator().setFrameOrigin_(frame.origin)
 
+
     @objc.IBAction
     def showHelp_(self, sender):
         NSWorkspace.sharedWorkspace().openURL_(NSURL.URLWithString_("https://github.com/grahamgilbert/imagr/wiki"))
+
+    @objc.IBAction
+    def showLog_(self, sender):
+        logfile = u"/var/log/system.log"
+        #self.logWindow.setLevel_(NSMainMenuWindowLevel+1)
+        self.logWindow.setTitle_(logfile)
+        self.logWindow.setCanBecomeVisibleWithoutLogin_(True)
+        self.logWindow.orderFrontRegardless()
+        self.watchLogFile_(logfile)
+        self.logWindow.makeKeyAndOrderFront_(self)
+
+    def watchLogFile_(self, logFile):
+        # Display and continuously update a log file in the main window.
+        self.stopWatching()
+        self.logFileData.removeAllLines()
+        self.logView.setDataSource_(self.logFileData)
+        self.logView.reloadData()
+        self.fileHandle = NSFileHandle.fileHandleForReadingAtPath_(logFile)
+        self.refreshLog()
+        # Kick off a timer that updates the log view periodically.
+        self.updateTimer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.25,
+            self,
+            u"refreshLog",
+            None,
+            YES
+        )
+
+    def stopWatching(self):
+        # Release the file handle and stop the update timer.
+        if self.fileHandle is not None:
+            self.fileHandle.closeFile()
+            self.fileHandle = None
+        if self.updateTimer is not None:
+            self.updateTimer.invalidate()
+            self.updateTimer = None
+
+    def refreshLog(self):
+        # Check for new available data, read it, and scroll to the bottom.
+        data = self.fileHandle.availableData()
+        if data.length():
+            utf8string = NSString.alloc().initWithData_encoding_(
+                data,
+                NSUTF8StringEncoding
+            )
+            for line in utf8string.splitlines(True):
+                if line.endswith(u"\n"):
+                    self.logFileData.addLine_partial_(line.rstrip(u"\n"), False)
+                else:
+                    self.logFileData.addLine_partial_(line, True)
+            self.logView.reloadData()
+            self.logView.scrollRowToVisible_(self.logFileData.lineCount() - 1)
+
+    def showBackdrop(self):
+        # Create a transparent, black backdrop window that covers the whole
+        # screen and fade it in slowly.
+        #self.mainWindow.setLevel_(NSMainMenuWindowLevel)
+        self.WindowArray = NSMutableArray.new()
+        for screen in NSScreen.screens():
+            screenRect = screen.frame()
+            backdropWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(screenRect, NSBorderlessWindowMask, NSBackingStoreBuffered, NO)
+            backdropWindow.setCanBecomeVisibleWithoutLogin_(True)
+            backdropWindow.setLevel_(-1)
+            #backdropWindow.setFrame_display_(screenRect, True)
+            #translucentColor = NSColor.blackColor().colorWithAlphaComponent_(0.75)
+            script_dir = os.path.dirname(os.path.realpath(__file__))
+            image = NSImage.alloc().initWithContentsOfFile_(os.path.join(script_dir, 'tiger.png'))
+            translucentColor = NSColor.colorWithPatternImage_(image)
+            translucentColor.setFill()
+            backdropWindow.setBackgroundColor_(translucentColor)
+            backdropWindow.setOpaque_(False)
+            backdropWindow.setIgnoresMouseEvents_(True)
+            backdropWindow.setAlphaValue_(0.0)
+            backdropWindow.orderFrontRegardless()
+            NSAnimationContext.beginGrouping()
+            NSAnimationContext.currentContext().setDuration_(1.0)
+            backdropWindow.animator().setAlphaValue_(1.0)
+            NSAnimationContext.endGrouping()
+            self.WindowArray.addObject_(backdropWindow)
+            backdropWindow.makeKeyAndOrderFront_(NSApp)
