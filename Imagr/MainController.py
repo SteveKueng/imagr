@@ -77,7 +77,6 @@ class MainController(NSObject):
     mainTab = objc.IBOutlet()
     errorTab = objc.IBOutlet()
     computerNameTab = objc.IBOutlet()
-    noIntercationTab = objc.IBOutlet()
     intallTab = objc.IBOutlet()
 
     password = objc.IBOutlet()
@@ -120,9 +119,6 @@ class MainController(NSObject):
 
     countdownWarningImage = objc.IBOutlet()
     countdownCancelButton = objc.IBOutlet()
-
-    noIntercationProcess = objc.IBOutlet()
-    noIntercationLabel = objc.IBOutlet()
 
     installHostname = objc.IBOutlet()
     installSerial = objc.IBOutlet()
@@ -341,8 +337,8 @@ class MainController(NSObject):
         else:
             self.buildUtilitiesMenu()
             if self.no_intercation:
-                self.theTabView.selectTabViewItem_(self.noIntercationTab)
-                self.noIntercationProcess.startAnimation_(self)
+                self.theTabView.selectTabViewItem_(self.introTab)
+                self.progressIndicator.startAnimation_(self)
                 self.noInteraction()
             elif self.hasLoggedIn:
                 self.enableWorkflowViewControls()
@@ -359,7 +355,7 @@ class MainController(NSObject):
             self.countdownOnThreadPrep()
 
     def checkComputerConfig(self):
-        self.noIntercationLabel.setStringValue_("Get computer info...")
+        self.progressText.setStringValue_("Get computer info...")
         hardware_info = Utils.get_hardware_info()
         serial_number = hardware_info.get('serial_number', 'UNKNOWN')
 
@@ -376,25 +372,25 @@ class MainController(NSObject):
                         converted_plist = FoundationPlist.readPlistFromString(computerPlist)
                     except:
                         self.errorMessage = "Configuration plist couldn't be read."
-                        self.noIntercationLabel.setStringValue_("Configuration plist couldn't be read.")
+                        self.progressText.setStringValue_("Configuration plist couldn't be read.")
                     try:
                         self.noInteractionTarget = converted_plist['target']
                     except:
                         self.errorMessage = "target not set."
-                        self.noIntercationLabel.setStringValue_("target not set.")
+                        self.progressText.setStringValue_("target not set.")
                     try:
                         self.noInteractionWorkflow = converted_plist['workflow']
                     except:
                         self.errorMessage = "workflow not set."
-                        self.noIntercationLabel.setStringValue_("workflow not set.")
+                        self.progressText.setStringValue_("workflow not set.")
                     if not self.errorMessage:
                         Utils.sendReport('in_progress', 'Computer info found... starting workflow...')
-                        self.noIntercationLabel.setStringValue_("Computer info found... starting workflow...")
-                        self.noIntercationProcess.stopAnimation_(self)
+                        self.progressText.setStringValue_("Computer info found... starting workflow...")
+                        self.progressIndicator.stopAnimation_(self)
                         break
                 else:
                     Utils.sendReport('in_progress', 'Computer info not found... try again in 10s...')
-                    self.noIntercationLabel.setStringValue_("Computer info not found... try again in 10s...")
+                    self.progressText.setStringValue_("Computer info not found... try again in 10s...")
                 time.sleep(10)
 
 
@@ -500,9 +496,7 @@ class MainController(NSObject):
             self.chooseTargetDropDown.addItemsWithTitles_(volume_list)
             if self.targetVolume:
                 self.chooseTargetDropDown.selectItemWithTitle_(self.targetVolume.mountpoint)
-            #     selected_volume = self.chooseTargetDropDown.titleOfSelectedItem()
-            # else:
-            #     selected_volume = list[0]
+            
             if self.noInteractionTarget:
                 selected_volume = self.noInteractionTarget
                 if selected_volume == "firstDisk":

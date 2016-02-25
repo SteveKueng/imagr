@@ -126,9 +126,6 @@
                 <outlet property="loginTab" destination="831" id="842"/>
                 <outlet property="mainTab" destination="830" id="843"/>
                 <outlet property="mainWindow" destination="e1G-kf-hT1" id="6bY-4r-JcW"/>
-                <outlet property="noIntercationLabel" destination="XKZ-Fw-Kzd" id="DQO-8R-baS"/>
-                <outlet property="noIntercationProcess" destination="Rk0-41-gs0" id="FMP-vV-4pF"/>
-                <outlet property="noIntercationTab" destination="U0V-x6-JbT" id="Gs1-Nt-bi9"/>
                 <outlet property="password" destination="478" id="671"/>
                 <outlet property="progressIndicator" destination="836" id="839"/>
                 <outlet property="progressText" destination="837" id="840"/>
@@ -559,41 +556,6 @@ Gw
                                                 </connections>
                                             </buttonCell>
                                         </button>
-                                    </subviews>
-                                </view>
-                            </tabViewItem>
-                            <tabViewItem label="nointeraction" identifier="1" id="U0V-x6-JbT" userLabel="no interaction">
-                                <view key="view" id="RPN-KA-d5H">
-                                    <rect key="frame" x="0.0" y="0.0" width="700" height="500"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                    <subviews>
-                                        <button verticalHuggingPriority="750" id="Ce2-Ub-N1O">
-                                            <rect key="frame" x="283" y="13" width="134" height="32"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <buttonCell key="cell" type="push" title="Cancel &amp; Restart" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Eft-JG-Pbb">
-                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" metaFont="system"/>
-                                                <string key="keyEquivalent" base64-UTF8="YES">
-Gw
-</string>
-                                            </buttonCell>
-                                            <connections>
-                                                <action selector="setStartupDisk:" target="664" id="HEH-et-z8Y"/>
-                                            </connections>
-                                        </button>
-                                        <progressIndicator horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" displayedWhenStopped="NO" bezeled="NO" indeterminate="YES" style="spinning" id="Rk0-41-gs0">
-                                            <rect key="frame" x="334" y="218" width="32" height="32"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        </progressIndicator>
-                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="XKZ-Fw-Kzd">
-                                            <rect key="frame" x="56" y="258" width="587" height="24"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" id="GSE-c7-aNq">
-                                                <font key="font" size="20" name=".HelveticaNeueDeskInterface-Regular"/>
-                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                            </textFieldCell>
-                                        </textField>
                                     </subviews>
                                 </view>
                             </tabViewItem>
