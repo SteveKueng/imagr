@@ -496,7 +496,7 @@ class MainController(NSObject):
             self.chooseTargetDropDown.addItemsWithTitles_(volume_list)
             if self.targetVolume:
                 self.chooseTargetDropDown.selectItemWithTitle_(self.targetVolume.mountpoint)
-            
+
             if self.noInteractionTarget:
                 selected_volume = self.noInteractionTarget
                 if selected_volume == "firstDisk":
@@ -975,7 +975,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    output = self.runScript(script, None, None, True)
+                    output = self.runScript(script)
                     self.computerName = output
                 else:
                     self.computerName = 'UNKNOWN'
@@ -992,7 +992,7 @@ class MainController(NSObject):
                     script = component.get('content', None)
 
                 if script:
-                    output = self.runScript(script, None, None, True)
+                    output = self.runScript(script)
                     self.computerNameInput.setStringValue_(output)
 
             elif component.get('prefix', None):
@@ -1003,6 +1003,8 @@ class MainController(NSObject):
             # Switch to the computer name tab
             self.theTabView.selectTabViewItem_(self.computerNameTab)
             self.mainWindow.makeFirstResponder_(self.computerNameInput)
+        self.installHostname.setStringValue_(self.computerName)
+
 
     @objc.IBAction
     def setComputerName_(self, sender):
@@ -1013,8 +1015,10 @@ class MainController(NSObject):
         hardware_info = Utils.get_hardware_info()
         serial_number = hardware_info.get('serial_number', 'UNKNOWN')
         if not self.computerName:
-            self.computerName = "-"
-        self.installHostname.setStringValue_(self.computerName)
+            computerName = "-"
+        else:
+            computerName = self.computerName
+        self.installHostname.setStringValue_(computerName)
         self.installSerial.setStringValue_(serial_number)
         self.installWorkflow.setStringValue_(self.selectedWorkflow['name'])
 
@@ -1165,7 +1169,7 @@ class MainController(NSObject):
             self.errorMessage = "Error copying first boot package %s - %s" % (url, error)
             return False
 
-    def downloadPackage(self, url, target, number, progress_method=None):
+    def downloadPackage(self, url, target, number, progress_method=None, additional_headers=None):
         error = None
         dest_dir = os.path.join(target, 'usr/local/first-boot/items')
         if not os.path.exists(dest_dir):
@@ -1240,14 +1244,11 @@ class MainController(NSObject):
         if not self.targetVolume.Mounted():
             self.targetVolume.Mount()
 
-        retcode = self.runScript(
+        outputScript = self.runScript(
             script, self.targetVolume.mountpoint,
             progress_method=self.updateProgressTitle_Percent_Detail_)
 
-        if retcode != 0:
-            self.errorMessage = "Script %s returned a non-0 exit code" % str(int(counter))
-
-    def runScript(self, script, target=None, progress_method=None, out=False):
+    def runScript(self, script, target=None, progress_method=None):
         """
         Replaces placeholders in a script and then runs it.
         """
@@ -1263,25 +1264,24 @@ class MainController(NSObject):
         if progress_method:
             progress_method("Running script...", 0, '')
         proc = subprocess.Popen(script_file.name, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        while proc.poll() is None:
+            output = proc.stdout.readline().strip().decode('UTF-8')
+            print output
+            if progress_method:
+                progress_method(None, None, output)
 
-        if out:
-            (output, err) = proc.communicate()
-            if proc.returncode:
-                NSLog("Error occurred: %@", err)
-                self.errorMessage = "Script returned a non-0 exit code"
-                os.remove(script_file.name)
-            else:
-                if progress_method:
-                    progress_method("Running script...", 100, "done!")
-                os.remove(script_file.name)
-                return output.strip()
-        else:
-            while proc.poll() is None:
-                output = proc.stdout.readline().strip().decode('UTF-8')
-                if progress_method:
-                    progress_method(None, None, output)
-            os.remove(script_file.name)
-            return proc.returncode
+
+        (scriptOut, err) = proc.communicate()
+        if proc.returncode:
+            NSLog("Error occurred: %@", err)
+            self.errorMessage = err.strip()
+            return False
+
+        if progress_method:
+            progress_method("Running script...", 100, "done!")
+
+        os.remove(script_file.name)
+        return scriptOut.strip()
 
     def copyScript(self, script, target, number, progress_method=None):
         """
@@ -1357,9 +1357,10 @@ class MainController(NSObject):
             self.restartToImagedVolume()
         elif returncode == 0:
             # NSLog("You clicked %@ - another workflow", returncode)
-            self.reloadVolumes()
-            self.enableWorkflowViewControls()
-            self.chooseImagingTarget_(None)
+            self.reloadWorkflows_(self)
+            #self.reloadVolumes()
+            #self.enableWorkflowViewControls()
+            #self.chooseImagingTarget_(None)
             # self.loadDataComplete()
 
     def enableAllButtons_(self, sender):
@@ -1445,14 +1446,16 @@ class MainController(NSObject):
         # self.targetVolume is the macdisk object that can be queried for its parent disk
         parent_disk = self.targetVolume.Info()['ParentWholeDisk']
         NSLog("Parent disk: %@", parent_disk)
-
         future_target_name = ''
         if script:
-            output = self.runScript(script, None, progress_method, True)
-            future_target_name = output.split(";")[0]
-            if output.split(";")[1]:
-                parent_disk = output.split(";")[1]
-            self.future_target = True
+            output = self.runScript(script, None, progress_method)
+            if output:
+                future_target_name = output.split(";")[0]
+                if output.split(";")[1]:
+                    parent_disk = output.split(";")[1]
+                self.future_target = True
+            else:
+                self.future_target = False
         else:
             numPartitions = 0
             cmd = ['/usr/sbin/diskutil', 'partitionDisk', '/dev/' + parent_disk]
@@ -1498,7 +1501,7 @@ class MainController(NSObject):
         if self.future_target == True:
             # Now assign self.targetVolume to new mountpoint
             partitionListFromDisk = macdisk.Disk('/dev/' + str(parent_disk))
-            
+
             # this is in desperate need of refactoring and rewriting
             # the only way to safely set self.targetVolume is to assign a new macdisk.Disk() object
             # and then find the partition that matches our target
