@@ -446,7 +446,7 @@ def getNoInteractURL():
     else:
         return None
 
-def sendReport(status, message):
+def sendReport(status, message, computerName=None):
     hardware_info = get_hardware_info()
     SERIAL = hardware_info.get('serial_number', 'UNKNOWN')
     data = {}
@@ -466,6 +466,8 @@ def sendReport(status, message):
         data["status"] = status
         data["serial"] = SERIAL
         data["message"] = message
+        if computerName:
+            data["name"] = computerName
 
         NSLog('Report: %@', data )
         data = urllib.urlencode(data)

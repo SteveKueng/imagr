@@ -669,7 +669,7 @@ class MainController(NSObject):
         self.disableWorkflowViewControls()
         self.setInstallVar()
         self.theTabView.selectTabViewItem_(self.intallTab)
-        Utils.sendReport('in_progress', 'Preparing to run workflow %s...' % self.selectedWorkflow['name'])
+        Utils.sendReport('in_progress', 'Preparing to run workflow %s...' % self.selectedWorkflow['name'], self.computerName)
         self.imagingLabel.setStringValue_("Preparing to run workflow...")
         self.imagingProgressDetail.setStringValue_('')
         self.contractImagingProgressPanel()
@@ -1003,7 +1003,6 @@ class MainController(NSObject):
             # Switch to the computer name tab
             self.theTabView.selectTabViewItem_(self.computerNameTab)
             self.mainWindow.makeFirstResponder_(self.computerNameInput)
-        self.installHostname.setStringValue_(self.computerName)
 
 
     @objc.IBAction
@@ -1263,15 +1262,17 @@ class MainController(NSObject):
 
         if progress_method:
             progress_method("Running script...", 0, '')
+        scriptOut = ''
         proc = subprocess.Popen(script_file.name, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         while proc.poll() is None:
             output = proc.stdout.readline().strip().decode('UTF-8')
-            print output
+            scriptOut = scriptOut + output
             if progress_method:
                 progress_method(None, None, output)
 
 
-        (scriptOut, err) = proc.communicate()
+        (output, err) = proc.communicate()
+        scriptOut = scriptOut + output
         if proc.returncode:
             NSLog("Error occurred: %@", err)
             self.errorMessage = err.strip()
