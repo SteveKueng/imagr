@@ -147,7 +147,7 @@ class MainController(NSObject):
     first_boot_items = None
     autorunWorkflow = None
     cancelledAutorun = False
-    no_intercation = False
+    nointeracturl = None
     noInteractionWorkflow = None
     noInteractionTarget = None
     fileHandle = None
@@ -305,6 +305,11 @@ class MainController(NSObject):
                     self.defaultWorkflow = converted_plist['default_workflow']
                 except:
                     pass
+                
+                try:
+                    self.nointeracturl = converted_plist['nointeracturl']
+                except:
+                    pass
 
                 try:
                     self.autorunWorkflow = converted_plist['autorun']
@@ -314,11 +319,7 @@ class MainController(NSObject):
                         self.autorunWorkflow = None
                 except:
                     pass
-
-                try:
-                    self.no_intercation = converted_plist['no_intercation']
-                except:
-                    self.errorMessage = "interaction mode not set"
+                        
             else:
                 self.errorMessage = "Couldn't get configuration plist from server."
         else:
@@ -336,7 +337,7 @@ class MainController(NSObject):
             self.errorPanel(self.errorMessage)
         else:
             self.buildUtilitiesMenu()
-            if self.no_intercation:
+            if self.nointeracturl:
                 self.theTabView.selectTabViewItem_(self.introTab)
                 self.progressIndicator.startAnimation_(self)
                 self.noInteraction()
@@ -361,7 +362,7 @@ class MainController(NSObject):
 
         Utils.sendReport('in_progress', 'Imagr no interaction mode starting...')
 
-        computerURL = Utils.getNoInteractURL()+"/"+serial_number
+        computerURL = self.nointeracturl+"/"+serial_number
 
         if computerURL:
             while True:

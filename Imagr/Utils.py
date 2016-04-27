@@ -439,13 +439,6 @@ def getReportURL():
     else:
         return None
 
-def getNoInteractURL():
-    noInteractURL = getPlistData('nointeracturl')
-    if noInteractURL:
-        return noInteractURL
-    else:
-        return None
-
 def sendReport(status, message, computerName=None):
     hardware_info = get_hardware_info()
     SERIAL = hardware_info.get('serial_number', 'UNKNOWN')
