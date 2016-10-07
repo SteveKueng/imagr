@@ -17,7 +17,7 @@ class AppDelegate(NSObject):
     def applicationDidFinishLaunching_(self, sender):
         NSLog("Application did finish launching.")
         if self.mainController:
-            self.mainController.showBackdrop()
+            #self.mainController.showBackdrop()
             self.mainController.runStartupTasks()
         
         if NSApp.respondsToSelector_('disableRelaunchOnLogin'):
