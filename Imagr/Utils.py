@@ -440,10 +440,8 @@ def setDate():
     
     failure()
 
-
 def getServerURL():
     return getPlistData('serverurl')
-
 
 def getReportURL():
     report_url = getPlistData('reporturl')
@@ -452,6 +450,12 @@ def getReportURL():
     else:
         return None
 
+def getHeadersReportURL():
+    reporturl_headers = getPlistData('reporturl_headers')
+    if reporturl_headers:
+        return reporturl_headers
+    else:
+        return None
 
 def sendReport(status, message):
     hardware_info = get_hardware_info()
@@ -469,8 +473,9 @@ def sendReport(status, message):
         data = urllib.urlencode(data)
         # silently fail here, sending reports is a nice to have, if server is
         # down, meh.
+        headers = getHeadersReportURL()
         try:
-            post_url(report_url, data)
+            post_url(report_url, data, additional_headers=headers)
         except:
             pass
 
