@@ -297,7 +297,7 @@ Gw
                                             <autoresizingMask key="autoresizingMask"/>
                                             <clipView key="contentView" copiesOnScroll="NO" id="ZQu-RR-yaA">
                                                 <rect key="frame" x="1" y="1" width="442" height="231"/>
-                                                <autoresizingMask key="autoresizingMask"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textView editable="NO" selectable="NO" drawsBackground="NO" importsGraphics="NO" verticallyResizable="NO" usesFontPanel="YES" findStyle="panel" usesRuler="YES" allowsNonContiguousLayout="YES" spellingCorrection="YES" id="762">
                                                         <rect key="frame" x="0.0" y="0.0" width="442" height="231"/>
@@ -657,7 +657,7 @@ Gw
                     </textField>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="-739" y="209"/>
+            <point key="canvasLocation" x="-412" y="209"/>
         </window>
     </objects>
     <resources>

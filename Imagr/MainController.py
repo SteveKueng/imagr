@@ -26,6 +26,7 @@ import shutil
 import Quartz
 import time
 import powermgr
+import json
 
 class MainController(NSObject):
 
@@ -113,6 +114,9 @@ class MainController(NSObject):
     cancelledAutorun = False
     authenticatedUsername = None
     authenticatedPassword = None
+
+    # Imagr server
+    imagrServer = None
 
     # For localize script
     keyboard_layout_name = None
@@ -395,6 +399,11 @@ class MainController(NSObject):
                     pass
 
                 try:
+                    self.imagrServer = converted_plist['imagr_server']
+                except:
+                    pass
+
+                try:
                     self.autorunWorkflow = converted_plist['autorun']
 
                     # If we've already cancelled autorun, don't bother trying to autorun again.
@@ -419,11 +428,16 @@ class MainController(NSObject):
             self.errorPanel(self.errorMessage)
         else:
             if self.hasLoggedIn:
-                self.enableWorkflowViewControls()
-                self.theTabView.selectTabViewItem_(self.mainTab)
-                self.chooseImagingTarget_(None)
+                if self.imagrServer:
+                    self.progressText.setStringValue_("imagr sever connecting...")
+                    self.disableWorkflowViewControls()
+                    NSThread.detachNewThreadSelector_toTarget_withObject_(self.processGetWorkflow, self, None)
+                else:
+                    self.enableWorkflowViewControls()
+                    self.theTabView.selectTabViewItem_(self.mainTab)
+                    self.chooseImagingTarget_(None)
 
-                self.isAutorun()
+                    self.isAutorun()
             else:
                 self.theTabView.selectTabViewItem_(self.loginTab)
                 self.mainWindow.makeFirstResponder_(self.password)
@@ -736,6 +750,30 @@ class MainController(NSObject):
         # Make sure the user still wants to autorun the default workflow (i.e. hasn't clicked cancel).
         if self.autorunWorkflow:
             self.runWorkflow_(None)
+
+    def processGetWorkflow(self):
+        '''get workflow form imagr server'''
+        pool = NSAutoreleasePool.alloc().init()
+        self.should_update_volume_list = False
+        
+        workflowURL = self.imagrServer.get('workflowURL', None)
+        additionalHeaders = self.imagrServer.get('additional_headers', None)
+
+        hardware_info = Utils.get_hardware_info()
+        SERIAL = hardware_info.get('serial_number', 'UNKNOWN')
+
+        # try to get the workflow
+        while True:
+            self.progressText.setStringValue_("get workflow...")
+            data = json.loads(Utils.downloadFile(workflowURL, additional_headers=additionalHeaders)[0])
+            if SERIAL in data:
+                workflow = data[SERIAL].get('imagr_workflow', None)
+                if workflow:
+                    self.autorunWorkflow = workflow
+                    break
+            time.sleep(10)
+        del pool
+        self.runWorkflow_(None)
 
     @objc.IBAction
     def cancelCountdown_(self, sender):
