@@ -429,7 +429,7 @@ class MainController(NSObject):
         else:
             if self.hasLoggedIn:
                 if self.imagrServer:
-                    self.progressText.setStringValue_("imagr sever connecting...")
+                    self.progressText.setStringValue_("imagr server connecting...")
                     self.disableWorkflowViewControls()
                     NSThread.detachNewThreadSelector_toTarget_withObject_(self.processGetWorkflow, self, None)
                 else:
@@ -755,7 +755,10 @@ class MainController(NSObject):
         '''get workflow form imagr server'''
         pool = NSAutoreleasePool.alloc().init()
         self.should_update_volume_list = False
-        
+
+        self.progressText.setStringValue_("waiting for workflow...")
+        Utils.sendReport('in_progress', 'Waiting for workflow')
+
         workflowURL = self.imagrServer.get('workflowURL', None)
         additionalHeaders = self.imagrServer.get('additional_headers', None)
 
@@ -764,7 +767,6 @@ class MainController(NSObject):
 
         # try to get the workflow
         while True:
-            self.progressText.setStringValue_("get workflow...")
             data = json.loads(Utils.downloadFile(workflowURL, additional_headers=additionalHeaders)[0])
             if SERIAL in data:
                 workflow = data[SERIAL].get('imagr_workflow', None)
