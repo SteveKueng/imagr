@@ -430,6 +430,7 @@ class MainController(NSObject):
             if self.hasLoggedIn:
                 if self.imagrServer:
                     self.progressText.setStringValue_("imagr server connecting...")
+                    self.chooseImagingTarget_(None)
                     self.disableWorkflowViewControls()
                     NSThread.detachNewThreadSelector_toTarget_withObject_(self.processGetWorkflow, self, None)
                 else:
@@ -770,12 +771,12 @@ class MainController(NSObject):
             data = json.loads(Utils.downloadFile(workflowURL, additional_headers=additionalHeaders)[0])
             if SERIAL in data:
                 workflow = data[SERIAL].get('imagr_workflow', None)
-                if workflow:
+                if workflow and workflow.strip():
                     self.autorunWorkflow = workflow
                     break
             time.sleep(10)
         del pool
-        self.runWorkflow_(None)
+        self.processCountdownOnThreadComplete()
 
     @objc.IBAction
     def cancelCountdown_(self, sender):
